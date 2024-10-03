@@ -23,8 +23,8 @@ type DockerClient struct {
 	cli *client.Client
 }
 
-func NewDockerClient() (*DockerClient, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+func NewDockerClient(host string) (*DockerClient, error) {
+	cli, err := client.NewClientWithOpts(client.WithHost(host), client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, err
 	}

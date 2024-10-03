@@ -1,0 +1,13 @@
+FROM golang:1.22
+
+WORKDIR /app
+
+RUN go env -w GOPROXY="https://goproxy.cn,direct"
+
+COPY . .
+
+RUN go mod download
+
+RUN go build -o /dmprobe ./cmd/dmprobe
+
+CMD [ "dmprobe" ]

@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/dlshle/dockman/pkg/dockerx"
-	"github.com/dlshle/gommon/logging"
 )
 
 const (
@@ -38,7 +37,7 @@ func (n *nginxGateway) CurrentConfig(ctx context.Context, dc *dockerx.DockerClie
 		return nil, err
 	}
 	if cfgResp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code %d", cfgResp.Status)
+		return nil, fmt.Errorf("unexpected status code %s", cfgResp.Status)
 	}
 	cfgData, err := io.ReadAll(cfgResp.Body)
 	if err != nil {
@@ -77,7 +76,7 @@ func (n *nginxGateway) ReloadGatewayContainer(ctx context.Context, dc *dockerx.D
 		return fmt.Errorf("failed to create nginx config file: %w", err)
 	}
 	defer os.RemoveAll(cfgDirPath)
-	err = dc.CopyFileToContainer(ctx, containers[0].ID, cfgPath, "/etc/nginx/nginx.conf")
+	err = dc.CopyFileToContainer(ctx, containers[0].ID, cfgPath, "/etc/nginx")
 	if err != nil {
 		return fmt.Errorf("failed to copy nginx config file to container: %w", err)
 	}
@@ -97,28 +96,16 @@ func (n *nginxGateway) DeployGatewayContainer(ctx context.Context, dc *dockerx.D
 	if err != nil {
 		return err
 	}
-	containerID, err := startNginxContainer(ctx, dc, runOpts)
+	// start container
+	_, err = startNginxContainer(ctx, dc, runOpts)
 	if err != nil {
 		return err
 	}
-	logging.GlobalLogger.Infof(ctx, "started nginx gateway container with id: %s", containerID)
-	return nil
+	// apply config
+	return n.ReloadGatewayContainer(ctx, dc, cfg)
 }
 
 func nginxContainerConfig(cfg *GatewayDeploymentConfig) (*dockerx.RunOptions, error) {
-	nginxCfg := buildNginxConfig(cfg)
-	// Create a temporary file to store the nginx configuration
-	cfgDirPath, cfgPath, err := createNginxConfigFileInTempDir(nginxCfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create nginx config file: %w", err)
-	}
-
-	defer os.RemoveAll(cfgDirPath) // Clean up the directory afterwards
-
-	volumeMapping := []string{
-		fmt.Sprintf("%s:%s", cfgPath, "/etc/nginx/nginx.conf"),
-	}
-
 	portMapping := make(map[string]string)
 	for _, exposedPort := range cfg.Ports {
 		portMapping[exposedPort] = exposedPort
@@ -128,10 +115,8 @@ func nginxContainerConfig(cfg *GatewayDeploymentConfig) (*dockerx.RunOptions, er
 		ContainerName: nginxContainerName(cfg.Network),
 		Image:         "nginx",
 		Detached:      true,
-		VolumeMapping: volumeMapping,
 		Networks:      []string{cfg.Network},
 		PortMapping:   portMapping,
-		Labels:        map[string]string{"gateway": gatewayLabel},
 	}, nil
 }
 
