@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -64,6 +65,48 @@ func (d *Deployment) Deploy(ctx context.Context, strategy gateway.GatewayStrateg
 	}
 
 	return d.Rollout(ctx, strategy, appCfg)
+}
+
+func (d *Deployment) Delete(ctx context.Context, appName string) error {
+	// network
+	networkName := networkNameByAppName(appName)
+
+	networks, err := d.docker.ListNetworks(ctx, map[string]string{"name": networkName})
+	if err != nil {
+		return err
+	}
+
+	if len(networks) == 0 {
+		return errors.New("app deployment for " + appName + " is not found")
+	}
+
+	// containers
+	containers, err := d.docker.ListContainers(ctx, map[string]string{"network": networkName})
+	if err != nil {
+		return err
+	}
+	for _, container := range containers {
+		if container.State == "running" {
+			if err = d.docker.StopContainer(ctx, container.ID); err != nil {
+				return err
+			}
+		}
+		if err := d.docker.RemoveContainer(ctx, container.ID); err != nil {
+			logging.GlobalLogger.Errorf(ctx, "failed to remove container %s: %v", container.ID, err)
+			return err
+		}
+	}
+
+	if len(networks) > 0 {
+		// delete networks
+		for _, n := range networks {
+			if err = d.docker.RemoveNetwork(ctx, n.Name); err != nil {
+				logging.GlobalLogger.Errorf(ctx, "failed to remove network %s: %v", n.Name, err)
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.GatewayStrategy, appCfg *config.AppConfig) (err error) {
@@ -213,7 +256,11 @@ func (d *Deployment) createNetworkIfNotExists(ctx context.Context, appCfg *confi
 }
 
 func networkNameByAppConfig(appCfg *config.AppConfig) string {
-	return fmt.Sprintf("v-network-%s", appCfg.Name)
+	return networkNameByAppName(appCfg.Name)
+}
+
+func networkNameByAppName(appName string) string {
+	return fmt.Sprintf("v-network-%s", appName)
 }
 
 func containerNameByAppConfig(appCfg *config.AppConfig, replicaID int) string {

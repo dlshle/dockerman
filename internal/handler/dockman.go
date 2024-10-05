@@ -56,6 +56,10 @@ func (s *DockmanHandler) Rollout(ctx context.Context, appCfg *config.AppConfig) 
 	return s.deployment.Rollout(ctx, strategy, appCfg)
 }
 
+func (s *DockmanHandler) Delete(ctx context.Context, appName string) error {
+	return s.deployment.Delete(ctx, appName)
+}
+
 func (s *DockmanHandler) GatewayStrategies() []string {
 	var strategies []string
 	for k := range gateway.StrategyRegistry {

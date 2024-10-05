@@ -72,6 +72,7 @@ func (dc *DockerClient) ListNetworks(ctx context.Context, params map[string]stri
 			peers[peer.Name] = peer.IP
 		}
 		resultNetworks = append(resultNetworks, &Network{
+			ID:       network.ID,
 			Driver:   network.Driver,
 			Internal: network.Internal,
 			Labels:   network.Labels,
@@ -194,6 +195,10 @@ func (dc *DockerClient) StartContainer(ctc context.Context, containerID string) 
 
 func (dc *DockerClient) RemoveContainer(ctx context.Context, containerID string) error {
 	return dc.cli.ContainerRemove(ctx, containerID, container.RemoveOptions{})
+}
+
+func (dc *DockerClient) RemoveNetwork(ctx context.Context, networkID string) error {
+	return dc.cli.NetworkRemove(ctx, networkID)
 }
 
 func (dc *DockerClient) ReadFileContentFromContainer(ctx context.Context, containerID, containerFilePath string) ([]byte, error) {

@@ -20,6 +20,7 @@ type Container struct {
 }
 
 type Network struct {
+	ID       string
 	Name     string
 	Driver   string
 	Internal bool // is this network only for internal?
