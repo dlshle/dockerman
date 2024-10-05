@@ -12,7 +12,7 @@ type Portforward struct {
 }
 
 func NewPortforwardHandler(port int, dc *dockerx.DockerClient) *Portforward {
-	mgr := server.NewTCPProxyManager(async.NewAsyncPool("proxy-processors", 1024, 512), async.NewAsyncPool("proxy-read", 1024, 512), CreateContainerIDResolver(dc))
+	mgr := server.NewTCPProxyManager(async.NewAsyncPool("proxy-processors", 1024, 512), async.NewAsyncPool("proxy-read", 1024, 512), CreateContainerNameResolver(dc))
 	return &Portforward{
 		dc:  dc,
 		svr: *server.NewTCPProxyServer(port, mgr),
