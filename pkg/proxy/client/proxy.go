@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"strconv"
 	"time"
 
 	"github.com/dlshle/dockman/pkg/proxy/common"
@@ -36,13 +35,13 @@ func NewProxy(ctx context.Context, sourceConn net.Conn, remote *Remote) *Proxy {
 	return p
 }
 
-func (p *Proxy) init() error {
+func (p *Proxy) init(proxySvrHost string) error {
 	conn := p.sourceConn
 	// prepare local tcp conn
 	conn.SetDeadline(time.Time{})
 
 	// establish conn with backend
-	backendConn, err := net.Dial("tcp", p.remote.Host+":"+strconv.Itoa(int(p.remote.Port)))
+	backendConn, err := net.Dial("tcp", proxySvrHost)
 	if err != nil {
 		return err
 	}

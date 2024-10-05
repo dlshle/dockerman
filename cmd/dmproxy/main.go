@@ -13,8 +13,9 @@ import (
 )
 
 type PortForward struct {
-	ContainerID  string
-	PortMappings []*PortMapping
+	ProxyServerHost string
+	ContainerID     string
+	PortMappings    []*PortMapping
 }
 
 type PortMapping struct {
@@ -30,9 +31,9 @@ func main() {
 		portMappingsArgs string
 	)
 
-	flag.StringVar(&host, "h", "", "dockerman host address")
-	flag.StringVar(&containerID, "c", "", "docker container id")
-	flag.StringVar(&portMappingsArgs, "p", "", "port mappings(source:dest), separated by comma")
+	flag.StringVar(&host, "h", "192.168.0.158:14514", "dockerman host address")
+	flag.StringVar(&containerID, "c", "v-cc-1", "docker container id")
+	flag.StringVar(&portMappingsArgs, "p", "88:80", "port mappings(source:dest), separated by comma")
 
 	if err := validateInput(host, containerID, portMappingsArgs); err != nil {
 		log.Fatal(err)
@@ -44,8 +45,9 @@ func main() {
 	}
 
 	portForward := &PortForward{
-		ContainerID:  containerID,
-		PortMappings: portMappings,
+		ProxyServerHost: host,
+		ContainerID:     containerID,
+		PortMappings:    portMappings,
 	}
 
 	if err = listen(portForward); err != nil {
@@ -58,8 +60,9 @@ func listen(pf *PortForward) (err error) {
 		wg sync.WaitGroup
 	)
 	for _, pm := range pf.PortMappings {
+		wg.Add(1)
 		go func(pm *PortMapping) {
-			err = client.PortForward(context.Background(), &wg, pm.Source, &client.Remote{
+			err = client.PortForward(context.Background(), &wg, pf.ProxyServerHost, pm.Source, &client.Remote{
 				Host: pf.ContainerID,
 				Port: int32(pm.Dest),
 			})

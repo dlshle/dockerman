@@ -21,7 +21,7 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/dlshle/aghs v1.4.63
-	github.com/dlshle/gts v0.1.3
+	github.com/dlshle/gts v0.1.4
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
