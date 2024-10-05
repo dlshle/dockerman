@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/dlshle/gommon/logging"
 	"github.com/dlshle/gommon/slices"
@@ -96,8 +97,13 @@ func (dc *DockerClient) ListContainers(ctx context.Context, params map[string]st
 			networkIP[networkName] = network.IPAddress
 		}
 		result = append(result, &Container{
-			ID:           container.ID,
-			Names:        container.Names,
+			ID: container.ID,
+			Names: slices.Map(container.Names, func(s string) string {
+				if strings.HasPrefix(s, "/") {
+					return s[1:]
+				}
+				return s
+			}),
 			Labels:       container.Labels,
 			Image:        container.Image,
 			ImageID:      container.ImageID,
