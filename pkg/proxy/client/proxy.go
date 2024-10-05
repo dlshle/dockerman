@@ -66,7 +66,7 @@ func (p *Proxy) startProxyLoop(backendProxy *common.ProxyConn) {
 	go func() {
 		_, err := io.Copy(backendProxy, p.sourceConn)
 		if err != nil {
-			logging.GlobalLogger.Errorf(ctx, "error occurred while copying data from client to destination: %w", err)
+			logging.GlobalLogger.Errorf(ctx, "error occurred while copying data from client to destination: %v", err)
 			p.closeFunc()
 		}
 	}()
@@ -74,7 +74,7 @@ func (p *Proxy) startProxyLoop(backendProxy *common.ProxyConn) {
 	go func() {
 		_, err := backendProxy.WriteTo(p.sourceConn)
 		if err != nil {
-			logging.GlobalLogger.Errorf(ctx, "error occurred while copying data from destination to client: %w", err)
+			logging.GlobalLogger.Errorf(ctx, "error occurred while copying data from destination to client: %v", err)
 			p.closeFunc()
 		}
 	}()

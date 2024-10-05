@@ -73,12 +73,12 @@ func (n *nginxGateway) ReloadGatewayContainer(ctx context.Context, dc *dockerx.D
 	nginxCfg := buildNginxConfig(cfg)
 	cfgDirPath, cfgPath, err := createNginxConfigFileInTempDir(nginxCfg)
 	if err != nil {
-		return fmt.Errorf("failed to create nginx config file: %w", err)
+		return fmt.Errorf("failed to create nginx config file: %v", err)
 	}
 	defer os.RemoveAll(cfgDirPath)
 	err = dc.CopyFileToContainer(ctx, containers[0].ID, cfgPath, "/etc/nginx")
 	if err != nil {
-		return fmt.Errorf("failed to copy nginx config file to container: %w", err)
+		return fmt.Errorf("failed to copy nginx config file to container: %v", err)
 	}
 	err = dc.ExecContainer(ctx, containers[0].ID, []string{"nginx", "-s", "reload"})
 	if err != nil && strings.Contains(err.Error(), "no servers are inside upstream") {
@@ -127,13 +127,13 @@ func nginxContainerConfig(cfg *GatewayDeploymentConfig) (*dockerx.RunOptions, er
 func createNginxConfigFileInTempDir(nginxCfg string) (dirPath string, cfgPath string, err error) {
 	tmpDir, err := os.MkdirTemp("", "nginx-config")
 	if err != nil {
-		return "", "", fmt.Errorf("failed to create temporary directory for nginx config: %w", err)
+		return "", "", fmt.Errorf("failed to create temporary directory for nginx config: %v", err)
 	}
 
 	configFilePath := filepath.Join(tmpDir, "nginx.conf")
 	if err := os.WriteFile(configFilePath, []byte(nginxCfg), 0644); err != nil {
 		defer os.RemoveAll(tmpDir)
-		return "", "", fmt.Errorf("failed to write nginx config file: %w", err)
+		return "", "", fmt.Errorf("failed to write nginx config file: %v", err)
 	}
 	return tmpDir, configFilePath, nil
 }
@@ -145,7 +145,7 @@ func nginxContainerName(network string) string {
 func startNginxContainer(ctx context.Context, dc *dockerx.DockerClient, opts *dockerx.RunOptions) (string, error) {
 	containerID, err := dc.RunImage(ctx, opts)
 	if err != nil {
-		return "", fmt.Errorf("failed to start nginx gateway: %w", err)
+		return "", fmt.Errorf("failed to start nginx gateway: %v", err)
 	}
 
 	return containerID, nil

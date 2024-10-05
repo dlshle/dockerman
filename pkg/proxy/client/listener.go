@@ -23,7 +23,7 @@ func listen(ctx context.Context, wg *sync.WaitGroup, port int, handler func(cont
 		default:
 			conn, err := listen.Accept()
 			if err != nil {
-				logging.GlobalLogger.Errorf(ctx, "failed to accept connection: %w", err)
+				logging.GlobalLogger.Errorf(ctx, "failed to accept connection: %v", err)
 				continue
 			}
 			ctx := logging.WrapCtx(ctx, "source", conn.RemoteAddr().String())

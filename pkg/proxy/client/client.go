@@ -15,7 +15,7 @@ func PortForward(ctx context.Context, wg *sync.WaitGroup, localPort int, remote 
 	return listen(ctx, wg, localPort, func(ctx context.Context, conn net.Conn) {
 		p := NewProxy(ctx, conn, remote)
 		if err := p.init(); err != nil {
-			logging.GlobalLogger.Errorf(ctx, "failed to create proxy: %w", err)
+			logging.GlobalLogger.Errorf(ctx, "failed to create proxy: %v", err)
 		}
 	})
 }

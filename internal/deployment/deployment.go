@@ -143,7 +143,7 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 			Ports:                 ports,
 		}
 		if err = strategy.DeployGatewayContainer(ctx, d.docker, gatewayCfg); err != nil {
-			return fmt.Errorf("failed to initiate gateway: %w", err)
+			return fmt.Errorf("failed to initiate gateway: %v", err)
 		}
 	}
 
@@ -164,7 +164,7 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 			Labels:        strategy.Labels(),
 		})
 		if err != nil {
-			logging.GlobalLogger.Errorf(ctx, "failed to deploy new container %s for %s due to %w", containerName, newContainerID, err)
+			logging.GlobalLogger.Errorf(ctx, "failed to deploy new container %s for %s due to %v", containerName, newContainerID, err)
 			return err
 		}
 		logging.GlobalLogger.Infof(ctx, "new container %s(%s) for %s deployed", containerName, newContainerID, appCfg.Name)
@@ -178,11 +178,11 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 		// stop and rename old container
 		if container != nil {
 			if err = d.docker.StopContainer(ctx, container.ID); err != nil {
-				logging.GlobalLogger.Errorf(ctx, "failed to stop old container %v due to %w", container, err)
+				logging.GlobalLogger.Errorf(ctx, "failed to stop old container %v due to %v", container, err)
 				return err
 			}
 			if err = d.docker.RenameContainer(ctx, container.ID, containerName+"-old"); err != nil {
-				logging.GlobalLogger.Errorf(ctx, "failed to rename old container %v due to %w", container, err)
+				logging.GlobalLogger.Errorf(ctx, "failed to rename old container %v due to %v", container, err)
 
 				// recover last container
 				d.docker.StartContainer(ctx, container.ID)
@@ -194,7 +194,7 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 		// rename new container(remove the -canary part)
 		err = d.docker.RenameContainer(ctx, newContainerID, containerName)
 		if err != nil {
-			logging.GlobalLogger.Errorf(ctx, "failed to rename new container %v due to %w", newContainerID, err)
+			logging.GlobalLogger.Errorf(ctx, "failed to rename new container %v due to %v", newContainerID, err)
 
 			// this recovering logic is bad, need refactoring
 			// try to recover old container
@@ -206,7 +206,7 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 			if rerr := d.docker.StopContainer(ctx, newContainerID); rerr == nil {
 				d.docker.RemoveContainer(ctx, newContainerID)
 			}
-			return fmt.Errorf("failed to rename new container %v due to %w", newContainerID, err)
+			return fmt.Errorf("failed to rename new container %v due to %v", newContainerID, err)
 		}
 
 		// setup gateway config with new container config(if not match and reload gateway)

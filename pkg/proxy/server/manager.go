@@ -73,7 +73,7 @@ func (m *TCPProxyManager) handleConnect(ctx context.Context, sourceConn gts.Conn
 
 	// reply ack to source once backend connection successfully established
 	if err = sourceConn.Write([]byte("ok")); err != nil {
-		logging.GlobalLogger.Errorf(ctx, "error writing ack to sourceConn %v: %w", sourceConn, err)
+		logging.GlobalLogger.Errorf(ctx, "error writing ack to sourceConn %v: %v", sourceConn, err)
 		destConn.Close()
 		return err
 	}
@@ -134,7 +134,7 @@ func (m *TCPProxyManager) connectionProcessLoop(conn *Connection) {
 				}
 			case sourceToDestMsg := <-conn.fromSource:
 				if err := m.handlePayload(conn, sourceToDestMsg); err != nil {
-					logging.GlobalLogger.Errorf(connCtx, "Failed to handle payload: %w", err)
+					logging.GlobalLogger.Errorf(connCtx, "Failed to handle payload: %v", err)
 					closeFunc()
 				}
 			}
@@ -154,14 +154,14 @@ func (m *TCPProxyManager) connectionProcessLoop(conn *Connection) {
 			return
 		case writeToSourceData := <-conn.toSource:
 			if err := sourceConn.Write(writeToSourceData); err != nil {
-				logging.GlobalLogger.Errorf(connCtx, "Failed to write to source conn: %w, closing connection", err)
+				logging.GlobalLogger.Errorf(connCtx, "Failed to write to source conn: %v, closing connection", err)
 				closeFunc()
 			}
 		case writeToDestData := <-conn.toDest:
 			// TODO add exponential backoff retry
 			_, err := backendConn.Write(writeToDestData)
 			if err != nil {
-				logging.GlobalLogger.Errorf(connCtx, "Failed to write to backend conn: %w, closing connection", err)
+				logging.GlobalLogger.Errorf(connCtx, "Failed to write to backend conn: %v, closing connection", err)
 				closeFunc()
 			}
 		}
@@ -178,7 +178,7 @@ func (m *TCPProxyManager) sourceReadLoop(connCtx context.Context, closeFunc func
 			if data, err := sourceConn.Read(); err == nil {
 				dataChan <- data
 			} else {
-				logging.GlobalLogger.Errorf(connCtx, "error reading from backend connection: %w", err)
+				logging.GlobalLogger.Errorf(connCtx, "error reading from backend connection: %v", err)
 				sourceConn.Close()
 				closeFunc()
 			}
@@ -197,7 +197,7 @@ func (m *TCPProxyManager) backendReadLoop(connCtx context.Context, closeFunc fun
 			if data, err := io.ReadAll(backendConn); err == nil {
 				dataChan <- data
 			} else {
-				logging.GlobalLogger.Errorf(connCtx, "error reading from backend connection: %w", err)
+				logging.GlobalLogger.Errorf(connCtx, "error reading from backend connection: %v", err)
 				backendConn.Close()
 				closeFunc()
 			}
