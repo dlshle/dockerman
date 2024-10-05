@@ -127,6 +127,7 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 		return err
 	}
 
+	logging.GlobalLogger.Infof(ctx, "existing backend containers: %v", containers)
 	containersMap := slicesx.ToMap(containers, func(c *dockerx.Container) (string, *dockerx.Container) {
 		return c.Names[0], c
 	})
