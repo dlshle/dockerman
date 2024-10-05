@@ -151,6 +151,9 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 	for replicaID := range appCfg.Replicas {
 		containerName := containerNameByAppConfig(appCfg, replicaID)
 		container := containersMap[containerName]
+		if container != nil {
+			logging.GlobalLogger.Infof(ctx, "container %s exists: %v", containerName, container)
+		}
 		if container != nil && container.Image == appCfg.Image {
 			continue
 		}
