@@ -127,8 +127,8 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 		return err
 	}
 
-	logging.GlobalLogger.Infof(ctx, "existing backend containers: %v", containers)
 	containersMap := slicesx.ToMap(containers, func(c *dockerx.Container) (string, *dockerx.Container) {
+		logging.GlobalLogger.Infof(ctx, "existing backend container(%s): %v", c.Names[0], c)
 		return c.Names[0], c
 	})
 
@@ -157,6 +157,17 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 		}
 		if container != nil && container.Image == appCfg.Image {
 			continue
+		}
+
+		// remove existing canary containers
+		canaryContainers, err := d.docker.ListContainers(ctx, map[string]string{"name": containerName + "-canary"})
+		if err != nil {
+			return err
+		}
+		for _, canaryContainer := range canaryContainers {
+			if err = d.docker.ForceRemoveContainer(ctx, canaryContainer.ID); err != nil {
+				return err
+			}
 		}
 
 		// deploy new container with new image

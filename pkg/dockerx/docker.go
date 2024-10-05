@@ -197,6 +197,10 @@ func (dc *DockerClient) RemoveContainer(ctx context.Context, containerID string)
 	return dc.cli.ContainerRemove(ctx, containerID, container.RemoveOptions{})
 }
 
+func (dc *DockerClient) ForceRemoveContainer(ctx context.Context, containerID string) error {
+	return dc.cli.ContainerRemove(ctx, containerID, container.RemoveOptions{Force: true})
+}
+
 func (dc *DockerClient) RemoveNetwork(ctx context.Context, networkID string) error {
 	return dc.cli.NetworkRemove(ctx, networkID)
 }
