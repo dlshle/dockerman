@@ -18,6 +18,13 @@ type Deployment struct {
 	backendClients map[string]http.HTTPClient
 }
 
+func NewDeployment(docker *dockerx.DockerClient) *Deployment {
+	return &Deployment{
+		docker:         docker,
+		backendClients: make(map[string]http.HTTPClient),
+	}
+}
+
 func (d *Deployment) Rollout(ctx context.Context, strategy gateway.GatewayStrategy, appCfg *config.AppConfig) error {
 	err := d.createNetworkIfNotExists(ctx, appCfg)
 	if err != nil {

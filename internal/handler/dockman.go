@@ -1,0 +1,47 @@
+package handler
+
+import (
+	"context"
+	"errors"
+
+	"github.com/dlshle/dockman/internal/config"
+	"github.com/dlshle/dockman/internal/deployment"
+	"github.com/dlshle/dockman/internal/gateway"
+	"github.com/dlshle/dockman/internal/portforward"
+	"github.com/dlshle/dockman/pkg/dockerx"
+)
+
+type DockmanHandler struct {
+	docker      *dockerx.DockerClient
+	portforward *portforward.Portforward
+	deployment  *deployment.Deployment
+}
+
+func NewDockmanHandler(docker *dockerx.DockerClient,
+	deployment *deployment.Deployment,
+	portforward *portforward.Portforward) *DockmanHandler {
+	return &DockmanHandler{docker: docker, deployment: deployment, portforward: portforward}
+}
+
+func (s *DockmanHandler) Deploy(ctx context.Context, appCfg *config.AppConfig) error {
+	if appCfg.GatewayStrategy == nil {
+		*appCfg.GatewayStrategy = "nginx"
+	}
+	strategy := gateway.StrategyRegistry[*appCfg.GatewayStrategy]
+	if strategy == nil {
+		return errors.New("unknown gateway strategy: " + *appCfg.GatewayStrategy)
+	}
+	return s.deployment.Deploy(ctx, strategy, appCfg)
+}
+
+func (s *DockmanHandler) GatewayStrategies() []string {
+	var strategies []string
+	for k := range gateway.StrategyRegistry {
+		strategies = append(strategies, k)
+	}
+	return strategies
+}
+
+func (s *DockmanHandler) StartPortforwardServer() error {
+	return s.portforward.Start()
+}

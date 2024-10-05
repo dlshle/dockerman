@@ -1,0 +1,35 @@
+syntax="proto3";
+
+package com.github.dlshle.dockman;
+
+option go_package = "github.com/dlshle/dockman/proto";
+
+message ProxyHeader {
+    enum Type {
+        UNKONWN = 0;
+        DATA = 1;
+        CONNECT = 2;
+        DISCONNECT = 3;
+        ACK = 4;
+    }
+    int32 connection_id = 1;
+    Type type = 2;
+}
+
+message ConnectRequest {
+    string host = 1;
+    int32 port = 2;
+}
+
+message DisconnectRequest {
+    string reason = 1;
+}
+
+message ProxyMessage {
+    ProxyHeader header = 1;
+    oneof data {
+        bytes payload = 2;
+        ConnectRequest connect_request = 3;
+        DisconnectRequest disconnect_request = 4;
+    }
+}

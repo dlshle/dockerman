@@ -26,9 +26,10 @@ type ReadinessCheckConfig struct {
 }
 
 type AppConfig struct {
-	Name           string                `yaml:"name"`
-	Image          string                `yaml:"image"`
-	Replicas       int                   `yaml:"replicas"`
-	Ports          []PortConfig          `yaml:"ports,flow"`
-	ReadinessCheck *ReadinessCheckConfig `yaml:"readinessCheck"`
+	Name            string                `yaml:"name"`
+	Image           string                `yaml:"image"`
+	Replicas        int                   `yaml:"replicas"`
+	Ports           []PortConfig          `yaml:"ports,flow"`
+	ReadinessCheck  *ReadinessCheckConfig `yaml:"readinessCheck"`
+	GatewayStrategy *string               `yaml:"gatewayStrategy"`
 }

@@ -9,6 +9,16 @@ import (
 	"github.com/dlshle/dockman/pkg/dockerx"
 )
 
+var (
+	ErrGatewayNotDeployed = fmt.Errorf("gateway not deployed")
+)
+
+var (
+	StrategyRegistry = map[string]GatewayStrategy{
+		"nginx": NewNginxGateway(),
+	}
+)
+
 type GatewayStrategy interface {
 	CurrentConfig(ctx context.Context, dc *dockerx.DockerClient, network string) (*GatewayDeploymentConfig, error)
 	GatewayContainerByNetwork(ctx context.Context, dc *dockerx.DockerClient, network string) (*dockerx.Container, error)
@@ -44,7 +54,3 @@ func UnmarshalGatewayDeploymentConfig(data []byte) (*GatewayDeploymentConfig, er
 	err := json.Unmarshal(data, &cfg)
 	return &cfg, err
 }
-
-var (
-	ErrGatewayNotDeployed = fmt.Errorf("gateway not deployed")
-)
