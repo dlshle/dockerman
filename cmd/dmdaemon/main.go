@@ -19,9 +19,11 @@ func main() {
 		fApiPort   string
 		fProxyPort string
 	)
-	flag.StringVar(&dockerHost, "h", "127.0.0.1:2375", "docker host(e.g. 127.0.0.1:2375) on machine")
+	flag.StringVar(&dockerHost, "h", "tcp://192.168.0.158:2375", "docker host(e.g. tcp://127.0.0.1:2375) on machine")
 	flag.StringVar(&fApiPort, "ap", "6300", "dockman api port")
 	flag.StringVar(&fProxyPort, "pp", "14514", "dockman proxy port")
+	flag.Parse()
+
 	dockerCli, err := dockerx.NewDockerClient(dockerHost)
 	if err != nil {
 		log.Fatal(err)

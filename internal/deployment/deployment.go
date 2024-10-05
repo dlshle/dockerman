@@ -56,8 +56,10 @@ func (d *Deployment) Deploy(ctx context.Context, strategy gateway.GatewayStrateg
 		}
 		return err
 	}
-	err = d.docker.RemoveContainer(ctx, gatewayContainer.ID)
-	if err != nil {
+	if err = d.docker.StopContainer(ctx, gatewayContainer.ID); err != nil {
+		return err
+	}
+	if err = d.docker.RemoveContainer(ctx, gatewayContainer.ID); err != nil {
 		return err
 	}
 
@@ -67,6 +69,16 @@ func (d *Deployment) Deploy(ctx context.Context, strategy gateway.GatewayStrateg
 func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.GatewayStrategy, appCfg *config.AppConfig) (err error) {
 	network := networkNameByAppConfig(appCfg)
 	ports := slicesx.Map(appCfg.Ports, func(p config.PortConfig) string { return fmt.Sprintf("%d", p.Source) })
+
+	// image existanec check
+	images, err := d.docker.ListImages(ctx, map[string]string{"reference": appCfg.Image})
+	if err != nil {
+		return err
+	}
+	if len(images) == 0 {
+		return fmt.Errorf("image %s not found", appCfg.Image)
+	}
+
 	containers, err := strategy.BackendContainersByNetwork(ctx, d.docker, network)
 	if err != nil {
 		return err
@@ -87,13 +99,16 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 			Network:               network,
 			Ports:                 ports,
 		}
+		if err = strategy.DeployGatewayContainer(ctx, d.docker, gatewayCfg); err != nil {
+			return fmt.Errorf("failed to initiate gateway: %w", err)
+		}
 	}
 
 	// TODO: add saga to support rollback
 	for replicaID := range appCfg.Replicas {
 		containerName := containerNameByAppConfig(appCfg, replicaID)
 		container := containersMap[containerName]
-		if container.Image == appCfg.Image {
+		if container != nil && container.Image == appCfg.Image {
 			continue
 		}
 
@@ -157,6 +172,7 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 			if container != nil && gatewayCfg.HasBackend(container.Names[0]) {
 				gatewayCfg.RemoveBackend(container.Names[0])
 			}
+
 			// reload gateway
 			err = strategy.ReloadGatewayContainer(ctx, d.docker, gatewayCfg)
 			if err != nil {

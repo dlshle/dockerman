@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/dlshle/aghs/server"
@@ -14,13 +15,32 @@ func ServeHTTP(port int, dmHandler *handler.DockmanHandler) error {
 	svc, err := server.NewServiceBuilder().Id("dockman").
 		WithRouteHandlers(server.PathHandlerBuilder("/deploy").
 			Post(server.NewCHandlerBuilder[*config.AppConfig]().Unmarshaller(func(b []byte) (*config.AppConfig, error) {
+				if len(b) == 0 {
+					return nil, errors.New("invalid argument: empty body")
+				}
 				cfg := &config.AppConfig{}
-				err := yaml.Unmarshal(b, cfg)
+				err := yaml.UnmarshalStrict(b, cfg)
 				return cfg, err
 			}).OnRequest(func(c server.CHandle[*config.AppConfig]) server.Response {
 				err := dmHandler.Deploy(context.Background(), c.Data())
 				if err != nil {
-					return server.NewPlainTextResponse(500, err)
+					return server.NewPlainTextResponse(500, err.Error())
+				}
+				return server.NewPlainTextResponse(200, "ok")
+			}).MustBuild().HandleRequest).
+			Build()).
+		WithRouteHandlers(server.PathHandlerBuilder("/rollout").
+			Post(server.NewCHandlerBuilder[*config.AppConfig]().Unmarshaller(func(b []byte) (*config.AppConfig, error) {
+				if len(b) == 0 {
+					return nil, errors.New("invalid argument: empty body")
+				}
+				cfg := &config.AppConfig{}
+				err := yaml.UnmarshalStrict(b, cfg)
+				return cfg, err
+			}).OnRequest(func(c server.CHandle[*config.AppConfig]) server.Response {
+				err := dmHandler.Rollout(context.Background(), c.Data())
+				if err != nil {
+					return server.NewPlainTextResponse(500, err.Error())
 				}
 				return server.NewPlainTextResponse(200, "ok")
 			}).MustBuild().HandleRequest).

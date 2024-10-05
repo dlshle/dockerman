@@ -9,6 +9,7 @@ import (
 	"github.com/dlshle/dockman/internal/gateway"
 	"github.com/dlshle/dockman/internal/portforward"
 	"github.com/dlshle/dockman/pkg/dockerx"
+	"github.com/dlshle/gommon/logging"
 )
 
 type DockmanHandler struct {
@@ -24,14 +25,35 @@ func NewDockmanHandler(docker *dockerx.DockerClient,
 }
 
 func (s *DockmanHandler) Deploy(ctx context.Context, appCfg *config.AppConfig) error {
+	if appCfg == nil {
+		return errors.New("app config is empty")
+	}
 	if appCfg.GatewayStrategy == nil {
+		appCfg.GatewayStrategy = new(string)
 		*appCfg.GatewayStrategy = "nginx"
 	}
 	strategy := gateway.StrategyRegistry[*appCfg.GatewayStrategy]
 	if strategy == nil {
 		return errors.New("unknown gateway strategy: " + *appCfg.GatewayStrategy)
 	}
+	logging.GlobalLogger.Infof(ctx, "deploying app %s with gateway strategy %s", appCfg.Name, *appCfg.GatewayStrategy)
 	return s.deployment.Deploy(ctx, strategy, appCfg)
+}
+
+func (s *DockmanHandler) Rollout(ctx context.Context, appCfg *config.AppConfig) error {
+	if appCfg == nil {
+		return errors.New("app config is empty")
+	}
+	if appCfg.GatewayStrategy == nil {
+		appCfg.GatewayStrategy = new(string)
+		*appCfg.GatewayStrategy = "nginx"
+	}
+	strategy := gateway.StrategyRegistry[*appCfg.GatewayStrategy]
+	if strategy == nil {
+		return errors.New("unknown gateway strategy: " + *appCfg.GatewayStrategy)
+	}
+	logging.GlobalLogger.Infof(ctx, "deploying app %s with gateway strategy %s", appCfg.Name, *appCfg.GatewayStrategy)
+	return s.deployment.Rollout(ctx, strategy, appCfg)
 }
 
 func (s *DockmanHandler) GatewayStrategies() []string {

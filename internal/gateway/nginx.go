@@ -80,7 +80,11 @@ func (n *nginxGateway) ReloadGatewayContainer(ctx context.Context, dc *dockerx.D
 	if err != nil {
 		return fmt.Errorf("failed to copy nginx config file to container: %w", err)
 	}
-	return dc.ExecContainer(ctx, containers[0].ID, []string{"nginx", "-s", "reload"})
+	err = dc.ExecContainer(ctx, containers[0].ID, []string{"nginx", "-s", "reload"})
+	if err != nil && strings.Contains(err.Error(), "no servers are inside upstream") {
+		return nil
+	}
+	return err
 }
 
 func (n *nginxGateway) BackendContainersByNetwork(ctx context.Context, dc *dockerx.DockerClient, network string) ([]*dockerx.Container, error) {

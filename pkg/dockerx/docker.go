@@ -6,9 +6,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/dlshle/gommon/logging"
 	"github.com/dlshle/gommon/slices"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -28,7 +30,16 @@ func NewDockerClient(host string) (*DockerClient, error) {
 	if err != nil {
 		return nil, err
 	}
+	_, err = cli.ImageList(context.Background(), image.ListOptions{Filters: filters.NewArgs(filters.Arg("reference", "nginx"))})
+	if err != nil {
+		return nil, err
+	}
+	logging.GlobalLogger.Infof(context.Background(), "connected to docker on host %s", host)
 	return &DockerClient{cli: cli}, nil
+}
+
+func (dc *DockerClient) HostClient() *http.Client {
+	return dc.cli.HTTPClient()
 }
 
 func (dc *DockerClient) ListImages(ctx context.Context, params map[string]string) ([]*Image, error) {
@@ -281,7 +292,6 @@ func (dc *DockerClient) ExecContainer(ctx context.Context, containerID string, c
 
 	execOutput := new(bytes.Buffer)
 	io.Copy(execOutput, execResp.Reader)
-	fmt.Println(execOutput.String())
 
 	// Check if the command executed successfully
 	inspectResp, err := dc.cli.ContainerExecInspect(ctx, execIDResp.ID)
@@ -289,7 +299,7 @@ func (dc *DockerClient) ExecContainer(ctx context.Context, containerID string, c
 		return err
 	}
 	if inspectResp.ExitCode != 0 {
-		return fmt.Errorf("exec failed with exit code %d", inspectResp.ExitCode)
+		return fmt.Errorf("exec failed with exit code %d: %s", inspectResp.ExitCode, execOutput.String())
 	}
 
 	return nil
