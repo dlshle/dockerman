@@ -64,7 +64,9 @@ func (s *TCPProxyServer) handleNewConn(ctx context.Context, sourceConn gts.Conne
 		if err := s.mgr.handleConnect(ctx, sourceConn, msg, sourceIncomingDataChan); err != nil {
 			logging.GlobalLogger.Errorf(ctx, "error handling connect request: %v", err)
 			// try to write back response
-			sourceConn.Write([]byte("error: " + err.Error()))
+			if err = sourceConn.Write([]byte("error: " + err.Error())); err != nil {
+				logging.GlobalLogger.Errorf(ctx, "error writing error response to sourceConn %v: %v", sourceConn, err)
+			}
 			sourceConn.Close()
 			return
 		}
