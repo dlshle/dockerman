@@ -125,12 +125,13 @@ func (m *TCPProxyManager) connectionProcessLoop(conn *Connection) {
 					logging.GlobalLogger.Errorf(connCtx, "error marshalling message %v, skipping", err)
 					continue
 				}
+				logging.GlobalLogger.Debugf(connCtx, "received data from backend: %v", msg)
 				select {
 				case <-time.After(5 * time.Second):
 					logging.GlobalLogger.Errorf(connCtx, "timed out waiting for message to be sent, closing connection")
 					closeFunc()
 				case conn.toSource <- data:
-					// good
+					logging.GlobalLogger.Debugf(connCtx, "wrote data to source: %v", msg)
 				}
 			case sourceToDestMsg := <-conn.fromSource:
 				if err := m.handlePayload(conn, sourceToDestMsg); err != nil {
@@ -156,6 +157,8 @@ func (m *TCPProxyManager) connectionProcessLoop(conn *Connection) {
 			if err := sourceConn.Write(writeToSourceData); err != nil {
 				logging.GlobalLogger.Errorf(connCtx, "Failed to write to source conn: %v, closing connection", err)
 				closeFunc()
+			} else {
+				logging.GlobalLogger.Infof(connCtx, "wrote %s to source conn", string(writeToSourceData))
 			}
 		case writeToDestData := <-conn.toDest:
 			// TODO add exponential backoff retry
@@ -163,6 +166,8 @@ func (m *TCPProxyManager) connectionProcessLoop(conn *Connection) {
 			if err != nil {
 				logging.GlobalLogger.Errorf(connCtx, "Failed to write to backend conn: %v, closing connection", err)
 				closeFunc()
+			} else {
+				logging.GlobalLogger.Infof(connCtx, "wrote %s to backend conn", string(writeToDestData))
 			}
 		}
 	}
@@ -206,7 +211,8 @@ func (m *TCPProxyManager) backendReadLoop(connCtx context.Context, closeFunc fun
 }
 
 func (m *TCPProxyManager) handlePayload(conn *Connection, data *proto.ProxyMessage) error {
-	if payload := data.GetPayload(); payload != nil {
+	logging.GlobalLogger.Infof(conn.ctx, "received msg from source: %v", data)
+	if payload := data.GetPayload(); len(payload) > 0 {
 		// handle payload
 		select {
 		case <-time.After(5 * time.Second):

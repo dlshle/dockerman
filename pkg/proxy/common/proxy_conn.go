@@ -1,10 +1,12 @@
 package common
 
 import (
+	"context"
 	"errors"
 	"io"
 
 	"github.com/dlshle/dockman/proto"
+	"github.com/dlshle/gommon/logging"
 	"github.com/dlshle/gts"
 	gproto "google.golang.org/protobuf/proto"
 )
@@ -39,6 +41,9 @@ func (c *ProxyConn) read() ([]byte, error) {
 	if err = gproto.Unmarshal(data, msg); err != nil {
 		return nil, err
 	}
+	if len(msg.GetPayload()) > 0 {
+		logging.GlobalLogger.Debugf(context.Background(), "read message %v", msg)
+	}
 	if msg.GetDisconnectRequest() != nil {
 		return nil, io.EOF
 	}
@@ -63,8 +68,10 @@ func (c *ProxyConn) Write(data []byte) (int, error) {
 		return 0, err
 	}
 	if err = c.conn.Write(marshalled); err != nil {
+		logging.GlobalLogger.Errorf(context.Background(), "error writing message: %v due to %v", msg, err)
 		return 0, err
 	}
+	logging.GlobalLogger.Debugf(context.Background(), "wrote message: %v", msg)
 	return len(data), nil
 }
 
