@@ -13,6 +13,6 @@ RUN go build -o /dmdaemon ./cmd/dmdaemon
 # daemon svr port
 EXPOSE 6300
 # proxy port
-EXPOSE 77688
+EXPOSE 17688
 
 CMD ["/dmdaemon"]
