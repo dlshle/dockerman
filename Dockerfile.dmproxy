@@ -1,5 +1,0 @@
-FROM golang:1.22
-
-WORKDIR /app
-
-RUN go env -w GOPROXY="https://goproxy.cn,direct"

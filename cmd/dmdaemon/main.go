@@ -19,9 +19,9 @@ func main() {
 		fApiPort   string
 		fProxyPort string
 	)
-	flag.StringVar(&dockerHost, "h", "tcp://192.168.0.158:2375", "docker host(e.g. tcp://127.0.0.1:2375) on machine")
+	flag.StringVar(&dockerHost, "h", "tcp://0.0.0.0:2375", "docker host(e.g. tcp://127.0.0.1:2375) on machine")
 	flag.StringVar(&fApiPort, "ap", "6300", "dockman api port")
-	flag.StringVar(&fProxyPort, "pp", "14514", "dockman proxy port")
+	flag.StringVar(&fProxyPort, "pp", "77688", "dockman proxy port")
 	flag.Parse()
 
 	dockerCli, err := dockerx.NewDockerClient(dockerHost)
@@ -64,15 +64,4 @@ func main() {
 	}()
 
 	wg.Wait()
-
-	// TODO dockerman daemon(server)
-	// inputs:
-	//   * deployment server port
-	//   * proxy server port
-	// modules:
-	//   * docker client(ok)
-	//   * deployment controller(ok)
-	//   * gateway controller(not yet)
-	//   * proxy controller(OK)
-	//   * probe controller(ok?)
 }

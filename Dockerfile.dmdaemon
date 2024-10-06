@@ -1,0 +1,18 @@
+FROM golang:1.22
+
+WORKDIR /app
+
+RUN go env -w GOPROXY="https://goproxy.cn,direct"
+
+COPY . .
+
+RUN go mod download
+
+RUN go build -o /dmdaemon ./cmd/dmdaemon
+
+# daemon svr port
+EXPOSE 6300
+# proxy port
+EXPOSE 77688
+
+CMD ["/dmdaemon"]

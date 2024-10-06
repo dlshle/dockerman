@@ -17,5 +17,6 @@ func PortForward(ctx context.Context, wg *sync.WaitGroup, proxySvrHost string, l
 		if err := p.init(proxySvrHost); err != nil {
 			logging.GlobalLogger.Errorf(ctx, "failed to create proxy: %v", err)
 		}
+		conn.Close()
 	})
 }
