@@ -12,12 +12,17 @@ import (
 )
 
 type ProxyConn struct {
-	connID int32
-	conn   gts.Connection
+	connID          int32
+	conn            gts.Connection
+	readInterceptor func(msg *proto.ProxyMessage) error
 }
 
 func NewProxyConn(connID int32, conn gts.Connection) *ProxyConn {
 	return &ProxyConn{connID: connID, conn: conn}
+}
+
+func NewProxyConnWithReadInterceptor(connID int32, conn gts.Connection, interceptor func(msg *proto.ProxyMessage) error) *ProxyConn {
+	return &ProxyConn{connID: connID, conn: conn, readInterceptor: interceptor}
 }
 
 func (c *ProxyConn) WriteTo(writer io.Writer) (int64, error) {
@@ -40,6 +45,11 @@ func (c *ProxyConn) read() ([]byte, error) {
 	msg := &proto.ProxyMessage{}
 	if err = gproto.Unmarshal(data, msg); err != nil {
 		return nil, err
+	}
+	if c.readInterceptor != nil {
+		if err = c.readInterceptor(msg); err != nil {
+			return nil, err
+		}
 	}
 	if len(msg.GetPayload()) > 0 {
 		logging.GlobalLogger.Debugf(context.Background(), "read message %v", msg)

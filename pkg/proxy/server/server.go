@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"time"
+	"fmt"
 
 	"github.com/dlshle/dockman/proto"
 	"github.com/dlshle/gommon/async"
@@ -39,6 +39,12 @@ func (s *TCPProxyServer) initSvr() {
 func (s *TCPProxyServer) handleNewConn(ctx context.Context, sourceConn gts.Connection) {
 	// wait for the connect request w/ 5 seconds timeout
 	sourceIncomingDataChan := make(chan *proto.ProxyMessage, 64)
+	connectMsg, err := s.negotiateNewSourceConn(ctx, sourceConn)
+	if err != nil {
+		logging.GlobalLogger.Errorf(ctx, "failed to negotiate new source connection: %v", err)
+		sourceConn.Close()
+		return
+	}
 	sourceConn.OnMessage(func(b []byte) {
 		msg := &proto.ProxyMessage{}
 		err := gproto.Unmarshal(b, msg)
@@ -48,27 +54,28 @@ func (s *TCPProxyServer) handleNewConn(ctx context.Context, sourceConn gts.Conne
 		}
 		sourceIncomingDataChan <- msg
 	})
-	s.connReadPool.Execute(sourceConn.ReadLoop)
-	// select once for initial contact
-	select {
-	case <-time.After(5 * time.Second):
-		logging.GlobalLogger.Errorf(ctx, "timed out waiting for connection to be established, closing connection")
+	if err = s.mgr.handleConnect(ctx, sourceConn, connectMsg); err != nil {
+		logging.GlobalLogger.Errorf(ctx, "failed to handle connect request from sourceConn %v: %v", sourceConn, err)
 		sourceConn.Close()
 		return
-	case msg := <-sourceIncomingDataChan:
-		if msg.Header.Type != proto.ProxyHeader_CONNECT {
-			logging.GlobalLogger.Errorf(ctx, "unexpected initial message received from sourceConn %v: %v, closing connection", sourceConn, msg)
-			sourceConn.Close()
-			return
-		}
-		if err := s.mgr.handleConnect(ctx, sourceConn, msg, sourceIncomingDataChan); err != nil {
-			logging.GlobalLogger.Errorf(ctx, "error handling connect request: %v", err)
-			// try to write back response
-			if err = sourceConn.Write([]byte("error: " + err.Error())); err != nil {
-				logging.GlobalLogger.Errorf(ctx, "error writing error response to sourceConn %v: %v", sourceConn, err)
-			}
-			sourceConn.Close()
-			return
-		}
 	}
+}
+
+func (s *TCPProxyServer) negotiateNewSourceConn(ctx context.Context, sourceConn gts.Connection) (*proto.ProxyMessage, error) {
+	firstStream, err := sourceConn.Read()
+	if err != nil {
+		return nil, err
+	}
+	msg := &proto.ProxyMessage{}
+	err = gproto.Unmarshal(firstStream, msg)
+	if err != nil {
+		logging.GlobalLogger.Errorf(ctx, "invalid first stream received from sourceConn %v: %v", sourceConn, err)
+		return nil, err
+	}
+	if msg.Header.Type != proto.ProxyHeader_CONNECT {
+		err = fmt.Errorf("unexpected initial message received from sourceConn %v: %v, closing connection", sourceConn, msg)
+		logging.GlobalLogger.Error(ctx, err.Error())
+		return nil, err
+	}
+	return msg, nil
 }

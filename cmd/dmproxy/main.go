@@ -14,7 +14,7 @@ import (
 
 type PortForward struct {
 	ProxyServerHost string
-	ContainerID     string
+	ContainerName   string
 	PortMappings    []*PortMapping
 }
 
@@ -27,15 +27,15 @@ func main() {
 	// dmproxy -h localhost -c d2123cf -p 5000:5000, 3000:3000, 80:80
 	var (
 		host             string
-		containerID      string
+		containerName    string
 		portMappingsArgs string
 	)
 
 	flag.StringVar(&host, "h", "192.168.0.158:14514", "dockerman host address")
-	flag.StringVar(&containerID, "c", "v-cc-1", "docker container id")
+	flag.StringVar(&containerName, "c", "v-cc-1", "docker container name")
 	flag.StringVar(&portMappingsArgs, "p", "88:80", "port mappings(source:dest), separated by comma")
 
-	if err := validateInput(host, containerID, portMappingsArgs); err != nil {
+	if err := validateInput(host, containerName, portMappingsArgs); err != nil {
 		log.Fatal(err)
 	}
 
@@ -46,7 +46,7 @@ func main() {
 
 	portForward := &PortForward{
 		ProxyServerHost: host,
-		ContainerID:     containerID,
+		ContainerName:   containerName,
 		PortMappings:    portMappings,
 	}
 
@@ -63,7 +63,7 @@ func listen(pf *PortForward) (err error) {
 		wg.Add(1)
 		go func(pm *PortMapping) {
 			err = client.PortForward(context.Background(), &wg, pf.ProxyServerHost, pm.Source, &client.Remote{
-				Host: pf.ContainerID,
+				Host: pf.ContainerName,
 				Port: int32(pm.Dest),
 			})
 			if err != nil {
