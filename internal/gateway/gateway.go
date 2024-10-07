@@ -32,6 +32,10 @@ type GatewayDeploymentConfig struct {
 	BackendContainerNames []string
 	Network               string
 	Ports                 []string // TODO change to AppConfig.PortConfig
+	ExposedPorts          []struct {
+		Port    string
+		Exposed string
+	}
 }
 
 func (cfg *GatewayDeploymentConfig) Json() string {

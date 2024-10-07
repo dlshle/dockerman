@@ -31,9 +31,9 @@ func main() {
 		portMappingsArgs string
 	)
 
-	flag.StringVar(&host, "h", "192.168.0.158:14514", "dockerman host address")
-	flag.StringVar(&containerName, "c", "v-cc-1", "docker container name")
-	flag.StringVar(&portMappingsArgs, "p", "88:80", "port mappings(source:dest), separated by comma")
+	flag.StringVar(&host, "h", "", "dockerman host address")
+	flag.StringVar(&containerName, "c", "", "docker container name")
+	flag.StringVar(&portMappingsArgs, "p", "", "port mappings(source:dest), separated by comma")
 
 	if err := validateInput(host, containerName, portMappingsArgs); err != nil {
 		log.Fatal(err)

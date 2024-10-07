@@ -13,8 +13,8 @@ type Config struct {
 }
 
 type PortConfig struct {
-	Source int `yaml:"source"` // source port in the container
-	// exposed *int `yaml:"exposed"` // exposed port in the host, if not set, port will not be exposed
+	Source  int  `yaml:"source"`  // source port in the container
+	Exposed *int `yaml:"exposed"` // exposed port in the host, if not set, port will not be exposed
 }
 
 type ReadinessCheckConfig struct {

@@ -111,8 +111,8 @@ func (n *nginxGateway) DeployGatewayContainer(ctx context.Context, dc *dockerx.D
 
 func nginxContainerConfig(cfg *GatewayDeploymentConfig) (*dockerx.RunOptions, error) {
 	portMapping := make(map[string]string)
-	for _, exposedPort := range cfg.Ports {
-		portMapping[exposedPort] = exposedPort
+	for _, ep := range cfg.ExposedPorts {
+		portMapping[ep.Port] = ep.Exposed
 	}
 
 	return &dockerx.RunOptions{
