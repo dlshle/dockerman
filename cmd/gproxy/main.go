@@ -55,6 +55,7 @@ func loadConfig(cfgPath string) (*gproxy.Config, error) {
 }
 
 func parseConfig(cfgData []byte) (*gproxy.Config, error) {
+	log.Printf("parsing config: %v\n", string(cfgData))
 	cfg := &gproxy.Config{}
 	if err := yaml.UnmarshalStrict(cfgData, cfg); err != nil {
 		return nil, err
