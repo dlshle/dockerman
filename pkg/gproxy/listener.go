@@ -31,7 +31,7 @@ func NewListener(protocol string, port int, backends []*Backend, policy Forwardi
 func (l *Listenr) ListenAndServe(ctx context.Context) error {
 	port := l.port
 	listen, err := net.Listen(l.protocol, fmt.Sprintf("0.0.0.0:%d", port))
-
+	logging.GlobalLogger.Infof(ctx, "listener on port %d", port)
 	if err != nil {
 		return err
 	}
