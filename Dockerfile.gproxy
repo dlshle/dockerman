@@ -10,4 +10,9 @@ RUN go mod download
 
 RUN go build -ldflags '-s -w' -o /gproxy ./cmd/gproxy
 
+# we can run container with `-e GPROXY_CONFIG="SOME 
+# MULTI
+# LINE 
+# CONFIG" gproxy`
+
 CMD ["/gproxy"]

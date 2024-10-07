@@ -15,9 +15,13 @@ func main() {
 		cfgString string
 		err       error
 	)
-	flag.StringVar(&cfgPath, "config", "dmproxy.yaml", "path to the gproxy (yaml) config file")
+	flag.StringVar(&cfgPath, "config", "", "path to the gproxy (yaml) config file")
 	flag.StringVar(&cfgString, "data", "", "config data in yaml format")
 	flag.Parse()
+
+	if cfgString == "" {
+		cfgString = os.Getenv("GPROXY_CONFIG")
+	}
 
 	if cfgPath == "" && cfgString == "" {
 		log.Fatal("config path(config) or config data(data) is required")
@@ -36,7 +40,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	_, err = gproxy.Entry(cfg)
+	err = gproxy.Entry(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}

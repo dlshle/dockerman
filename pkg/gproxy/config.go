@@ -7,11 +7,11 @@ type Backend struct {
 
 type ListenerCfg struct {
 	Port     int        `yaml:"port"`
-	Backends []*Backend `yaml:"backends"`
+	Backends []*Backend `yaml:"backends,flow"`
 	Policy   string     `yaml:"policy"`
 	Protocol string     `yaml:"protocol"`
 }
 
 type Config struct {
-	Upstreams []*ListenerCfg `yaml:"upstreams"`
+	Upstreams []*ListenerCfg `yaml:"upstreams,flow"`
 }

@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func Entry(cfg *Config) (func(), error) {
+func Entry(cfg *Config) error {
 
 	policyFactories := CreatePolicyFactories()
 
@@ -14,7 +14,7 @@ func Entry(cfg *Config) (func(), error) {
 		policyFactory, err := policyFactories(upstream.Policy)
 		if err != nil {
 			cancelFunc()
-			return nil, err
+			return err
 		}
 		l := NewListener(upstream.Protocol, upstream.Port, upstream.Backends, policyFactory())
 		go func() {
@@ -24,5 +24,7 @@ func Entry(cfg *Config) (func(), error) {
 			}
 		}()
 	}
-	return cancelFunc, nil
+
+	<-ctx.Done()
+	return nil
 }
