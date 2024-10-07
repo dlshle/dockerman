@@ -47,7 +47,7 @@ func (l *Listener) UpdateBackends(backends []*Backend) error {
 	newBackends := slicesx.ToMap(backends, func(backend *Backend) (string, *Backend) {
 		return backend.Addr(), backend
 	})
-	var toDeleteSet map[string]bool
+	toDeleteSet := make(map[string]bool)
 	for addr := range currBackends {
 		if newBackends[addr] == nil {
 			toDeleteSet[addr] = true
