@@ -148,15 +148,18 @@ func (l *Listener) deleteConn(backendAddr string, conn net.Conn) {
 }
 
 func (l *Listener) forward(ctx context.Context, conn net.Conn) error {
+	defer conn.Close()
 	backend := l.policy(ctx, conn, l.safeBackends())
 	logging.GlobalLogger.Infof(ctx, "backend %v has been choosen", backend)
 	backendConn, err := net.Dial(l.protocol, backend.Host+":"+strconv.Itoa(backend.Port))
+	defer backendConn.Close()
 	if err != nil {
 		logging.GlobalLogger.Errorf(ctx, "error connecting to backend %v: %v", backend, err)
 		return err
 	}
 	ctx, closeFunc := context.WithCancel(ctx)
 	l.addConn(backend.Addr(), conn)
+	defer l.deleteConn(backend.Addr(), conn)
 	go func() {
 		_, err = io.Copy(conn, backendConn)
 		closeFunc()
@@ -164,8 +167,5 @@ func (l *Listener) forward(ctx context.Context, conn net.Conn) error {
 	_, err = io.Copy(backendConn, conn)
 	closeFunc()
 	<-ctx.Done()
-	conn.Close()
-	backendConn.Close()
-	l.deleteConn(backend.Addr(), conn)
 	return err
 }
