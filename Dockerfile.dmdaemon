@@ -8,7 +8,7 @@ COPY . .
 
 RUN go mod download
 
-RUN go build -o /dmdaemon ./cmd/dmdaemon
+RUN go build -ldflags '-s -w' -o /dmdaemon ./cmd/dmdaemon
 
 # daemon svr port
 EXPOSE 6300

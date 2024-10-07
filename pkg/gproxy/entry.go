@@ -3,20 +3,10 @@ package gproxy
 import (
 	"context"
 	"log"
-	"os"
-
-	"gopkg.in/yaml.v2"
 )
 
-func entry(cfgPath string) (func(), error) {
-	cfgData, err := os.ReadFile(cfgPath)
-	if err != nil {
-		return nil, err
-	}
-	cfg := &Config{}
-	if err = yaml.UnmarshalStrict(cfgData, cfg); err != nil {
-		return nil, err
-	}
+func Entry(cfg *Config) (func(), error) {
+
 	policyFactories := CreatePolicyFactories()
 
 	ctx, cancelFunc := context.WithCancel(context.Background())

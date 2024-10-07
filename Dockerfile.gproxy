@@ -8,8 +8,6 @@ COPY . .
 
 RUN go mod download
 
-RUN go build -ldflags '-s -w' -o /dmprobe ./cmd/dmprobe
+RUN go build -ldflags '-s -w' -o /gproxy ./cmd/gproxy
 
-EXPOSE 36776
-
-CMD [ "/dmprobe" ]
+CMD ["/gproxy"]
