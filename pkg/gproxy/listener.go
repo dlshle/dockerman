@@ -31,6 +31,7 @@ func NewListener(ctx context.Context, protocol string, port int, backends []*Bac
 	return &Listener{
 		ctx:       ctx,
 		closeFunc: closeFunc,
+		conns:     make(map[string][]net.Conn),
 		mutex:     new(sync.Mutex),
 		protocol:  protocol,
 		port:      port,
