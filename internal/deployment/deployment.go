@@ -49,7 +49,7 @@ func (d *Deployment) Deploy(ctx context.Context, strategy gateway.GatewayStrateg
 		}
 	}
 
-	gatewayContainer, err := strategy.GatewayContainerByNetwork(ctx, d.docker, network)
+	gatewayContainer, err := strategy.GatewayContainerByAppName(ctx, d.docker, appCfg.Name)
 	if err != nil {
 		// if no gateway container, just rollout
 		if err == gateway.ErrGatewayNotDeployed {
@@ -121,6 +121,7 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 	if len(images) == 0 {
 		return fmt.Errorf("image %s not found", appCfg.Image)
 	}
+	image := images[0]
 
 	containers, err := strategy.BackendContainersByNetwork(ctx, d.docker, network)
 	if err != nil {
@@ -132,13 +133,14 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 		return c.Names[0], c
 	})
 
-	gatewayCfg, err := strategy.CurrentConfig(ctx, d.docker, network)
+	gatewayCfg, err := strategy.CurrentConfig(ctx, d.docker, appCfg.Name)
 	if err != nil {
 		if err != gateway.ErrGatewayNotDeployed {
 			return err
 		}
 		// gateway not deployed, use empty gateway config with prefilled values for now
 		gatewayCfg = &gateway.GatewayDeploymentConfig{
+			AppName:               appCfg.Name,
 			BackendContainerNames: []string{},
 			Network:               network,
 			Ports:                 ports,
@@ -155,7 +157,7 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 		if container != nil {
 			logging.GlobalLogger.Infof(ctx, "container %s exists: %v", containerName, container)
 		}
-		if container != nil && container.Image == appCfg.Image {
+		if container != nil && container.ImageID == image.ID {
 			continue
 		}
 

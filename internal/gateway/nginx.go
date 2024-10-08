@@ -23,14 +23,14 @@ func NewNginxGateway() GatewayStrategy {
 	return &nginxGateway{}
 }
 
-func (n *nginxGateway) CurrentConfig(ctx context.Context, dc *dockerx.DockerClient, network string) (*GatewayDeploymentConfig, error) {
-	container, err := n.GatewayContainerByNetwork(ctx, dc, network)
+func (n *nginxGateway) CurrentConfig(ctx context.Context, dc *dockerx.DockerClient, appName string, networkName string) (*GatewayDeploymentConfig, error) {
+	container, err := n.GatewayContainerByAppName(ctx, dc, appName)
 	if err != nil {
 		return nil, err
 	}
-	gatewayIP, exists := container.IPAddresses[network]
+	gatewayIP, exists := container.IPAddresses[networkName]
 	if !exists {
-		return nil, fmt.Errorf("container %s does not have IP address in network %s", container.ID, network)
+		return nil, fmt.Errorf("container %s does not have IP address in network %s", container.ID, appName)
 	}
 	cfgResp, err := http.Get(fmt.Sprintf("http://%s:%d/config", gatewayIP, configPort))
 	if err != nil {
@@ -46,8 +46,8 @@ func (n *nginxGateway) CurrentConfig(ctx context.Context, dc *dockerx.DockerClie
 	return UnmarshalGatewayDeploymentConfig(cfgData)
 }
 
-func (n *nginxGateway) GatewayContainerByNetwork(ctx context.Context, dc *dockerx.DockerClient, network string) (*dockerx.Container, error) {
-	containers, err := dc.ListContainers(ctx, map[string]string{"name": nginxContainerName(network)})
+func (n *nginxGateway) GatewayContainerByAppName(ctx context.Context, dc *dockerx.DockerClient, appName string) (*dockerx.Container, error) {
+	containers, err := dc.ListContainers(ctx, map[string]string{"name": nginxContainerName(appName)})
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (n *nginxGateway) GatewayContainerByNetwork(ctx context.Context, dc *docker
 }
 
 func (n *nginxGateway) ReloadGatewayContainer(ctx context.Context, dc *dockerx.DockerClient, cfg *GatewayDeploymentConfig) error {
-	containerName := nginxContainerName(cfg.Network)
+	containerName := nginxContainerName(cfg.AppName)
 	containers, err := dc.ListContainers(ctx, map[string]string{"name": containerName})
 	if err != nil {
 		return err
@@ -116,7 +116,7 @@ func nginxContainerConfig(cfg *GatewayDeploymentConfig) (*dockerx.RunOptions, er
 	}
 
 	return &dockerx.RunOptions{
-		ContainerName: nginxContainerName(cfg.Network),
+		ContainerName: nginxContainerName(cfg.AppName),
 		Image:         "nginx",
 		Detached:      true,
 		Networks:      []string{cfg.Network},
@@ -138,8 +138,9 @@ func createNginxConfigFileInTempDir(nginxCfg string) (dirPath string, cfgPath st
 	return tmpDir, configFilePath, nil
 }
 
-func nginxContainerName(network string) string {
-	return fmt.Sprintf("v-nginx-%s-gateway", network)
+func nginxContainerName(appName string) string {
+	// return fmt.Sprintf("v-nginx-%s-gateway", network)
+	return appName
 }
 
 func startNginxContainer(ctx context.Context, dc *dockerx.DockerClient, opts *dockerx.RunOptions) (string, error) {
@@ -147,7 +148,6 @@ func startNginxContainer(ctx context.Context, dc *dockerx.DockerClient, opts *do
 	if err != nil {
 		return "", fmt.Errorf("failed to start nginx gateway: %v", err)
 	}
-
 	return containerID, nil
 }
 

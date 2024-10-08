@@ -110,17 +110,24 @@ func (dc *DockerClient) ListContainers(ctx context.Context, params map[string]st
 			State:        container.State,
 			Status:       container.Status,
 			IPAddresses:  networkIP,
-			ExposedPorts: slices.Map(container.Ports, func(port types.Port) uint16 { return port.PublicPort }),
+			ExposedPorts: slices.ToMap(container.Ports, func(port types.Port) (uint16, uint16) { return port.PrivatePort, port.PublicPort }),
 		})
 	}
 	return result, nil
 }
 
 func (dc *DockerClient) RunImage(ctx context.Context, options *RunOptions) (string, error) {
+	var networkConfig *network.NetworkingConfig
+
+	exposedPorts := make(map[nat.Port]struct{})
+	for private := range options.PortMapping {
+		exposedPorts[nat.Port(private)] = struct{}{}
+	}
 	config := &container.Config{
-		Image:  options.Image,
-		Env:    options.Envs,
-		Labels: options.Labels,
+		Image:        options.Image,
+		Env:          options.Envs,
+		Labels:       options.Labels,
+		ExposedPorts: exposedPorts,
 	}
 
 	hostConfig := &container.HostConfig{
@@ -129,6 +136,12 @@ func (dc *DockerClient) RunImage(ctx context.Context, options *RunOptions) (stri
 
 	if len(options.Networks) > 0 {
 		hostConfig.NetworkMode = container.NetworkMode(options.Networks[0])
+
+		networkConfig = &network.NetworkingConfig{
+			EndpointsConfig: map[string]*network.EndpointSettings{
+				options.Networks[0]: {},
+			},
+		}
 	}
 
 	portBindings := nat.PortMap{}
@@ -139,13 +152,14 @@ func (dc *DockerClient) RunImage(ctx context.Context, options *RunOptions) (stri
 		}
 		portBindings[port] = []nat.PortBinding{
 			{
+				HostIP:   "0.0.0.0",
 				HostPort: hostPort,
 			},
 		}
 	}
 	hostConfig.PortBindings = portBindings
 
-	resp, err := dc.cli.ContainerCreate(ctx, config, hostConfig, nil, nil, options.ContainerName)
+	resp, err := dc.cli.ContainerCreate(ctx, config, hostConfig, networkConfig, nil, options.ContainerName)
 	if err != nil {
 		return "", err
 	}

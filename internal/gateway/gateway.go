@@ -15,27 +15,31 @@ var (
 
 var (
 	StrategyRegistry = map[string]GatewayStrategy{
-		"nginx": NewNginxGateway(),
+		"nginx":  NewNginxGateway(),
+		"gproxy": NewGProxyGateway(),
 	}
 )
 
 type GatewayStrategy interface {
-	CurrentConfig(ctx context.Context, dc *dockerx.DockerClient, network string) (*GatewayDeploymentConfig, error)
-	GatewayContainerByNetwork(ctx context.Context, dc *dockerx.DockerClient, network string) (*dockerx.Container, error)
+	CurrentConfig(ctx context.Context, dc *dockerx.DockerClient, appName string, networkName string) (*GatewayDeploymentConfig, error)
+	GatewayContainerByAppName(ctx context.Context, dc *dockerx.DockerClient, appName string) (*dockerx.Container, error)
 	BackendContainersByNetwork(ctx context.Context, dc *dockerx.DockerClient, network string) ([]*dockerx.Container, error)
 	ReloadGatewayContainer(ctx context.Context, dc *dockerx.DockerClient, cfg *GatewayDeploymentConfig) error
 	DeployGatewayContainer(ctx context.Context, dc *dockerx.DockerClient, cfg *GatewayDeploymentConfig) error
 	Labels() map[string]string
 }
 
+type ExposedPort struct {
+	Port    string
+	Exposed string
+}
+
 type GatewayDeploymentConfig struct {
+	AppName               string
 	BackendContainerNames []string
 	Network               string
 	Ports                 []string // TODO change to AppConfig.PortConfig
-	ExposedPorts          []struct {
-		Port    string
-		Exposed string
-	}
+	ExposedPorts          []*ExposedPort
 }
 
 func (cfg *GatewayDeploymentConfig) Json() string {

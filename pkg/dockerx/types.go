@@ -16,7 +16,7 @@ type Container struct {
 	State        string
 	Status       string
 	IPAddresses  map[string]string // network name to ip mapping
-	ExposedPorts []uint16
+	ExposedPorts map[uint16]uint16 // private port to public port
 }
 
 type Network struct {

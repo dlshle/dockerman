@@ -8,18 +8,47 @@ import (
 	"github.com/dlshle/dockman/pkg/dockerx"
 )
 
-func TestNginx(t *testing.T) {
+func TestGProxy(t *testing.T) {
 	d, e := dockerx.NewDockerClient("tcp://192.168.0.158:2375")
 	if e != nil {
 		t.Errorf("failed to connect to docker daemon %v", e)
 		t.FailNow()
 	}
-	g := NewNginxGateway()
+	g := NewGProxyGateway()
 	ctx := context.Background()
 
 	t.Run("test create gateway", func(t *testing.T) {
-		containerName := "nginx-gateway-test"
-		network := "test-network-abc"
+		containerName := "gproxy-gateway-test"
+		network := "test-gproxy-network-abc"
+
+		// data cleanup
+		existingContainers, err := d.ListContainers(ctx, map[string]string{"name": containerName, "label": "gateway=" + gatewayLabel})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(existingContainers) > 0 {
+			for _, container := range existingContainers {
+				if err = d.StopContainer(ctx, container.ID); err != nil {
+					t.Fatal(err)
+				}
+				if err = d.RemoveContainer(ctx, container.ID); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+		gtwyContainer, err := g.GatewayContainerByAppName(ctx, d, network)
+		if err != nil {
+			if err != ErrGatewayNotDeployed {
+				t.Fatal(err)
+			}
+		} else {
+			if err = d.StopContainer(ctx, gtwyContainer.ID); err != nil {
+				t.Fatal(err)
+			}
+			if err = d.RemoveContainer(ctx, gtwyContainer.ID); err != nil {
+				t.Fatal(err)
+			}
+		}
 
 		// actual test
 		networks, err := d.ListNetworks(ctx, map[string]string{"name": network})
@@ -47,10 +76,11 @@ func TestNginx(t *testing.T) {
 		}
 
 		cfg := &GatewayDeploymentConfig{
-			AppName:               "appName",
+			AppName:               "sometestapp",
 			BackendContainerNames: []string{containerName},
 			Network:               network,
 			Ports:                 []string{"80"},
+			ExposedPorts:          []*ExposedPort{{"80", "80"}},
 		}
 
 		if err = g.DeployGatewayContainer(ctx, d, cfg); err != nil {
@@ -73,7 +103,7 @@ func TestNginx(t *testing.T) {
 			t.FailNow()
 		}
 
-		currCfg, err := g.CurrentConfig(ctx, d, "appName", network)
+		currCfg, err := g.CurrentConfig(ctx, d, cfg.AppName, cfg.Network)
 		if err != nil {
 			t.Errorf("failed to get current config due to %v", err)
 			t.FailNow()
