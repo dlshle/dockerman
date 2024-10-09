@@ -18,7 +18,6 @@ type ProxyConn struct {
 }
 
 func NewProxyConn(connID int32, conn gts.Connection) *ProxyConn {
-	conn.Verbose(true)
 	return &ProxyConn{connID: connID, conn: conn}
 }
 
