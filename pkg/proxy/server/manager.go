@@ -65,6 +65,7 @@ func (m *TCPProxyManager) handleConnect(ctx context.Context, sourceConn gts.Conn
 	if err != nil {
 		return err
 	}
+	logging.GlobalLogger.Infof(ctx, "established backend connection to %s:%d for sourceConn %v", host, connectPayload.Port, sourceConn.String())
 
 	// reply ack to source once backend connection successfully established
 	if err = sourceConn.Write([]byte("ok")); err != nil {
@@ -72,6 +73,8 @@ func (m *TCPProxyManager) handleConnect(ctx context.Context, sourceConn gts.Conn
 		destConn.Close()
 		return err
 	}
+
+	logging.GlobalLogger.Info(ctx, "proxy connect negotiation completed")
 
 	connCtx, closeFunc := context.WithCancel(ctx)
 

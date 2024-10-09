@@ -53,6 +53,7 @@ func (p *Proxy) init(proxySvrHost string) error {
 
 	// negotiate with backend
 	if err = p.backendConnectNegotiation(backendProxy); err != nil {
+		logging.GlobalLogger.Errorf(context.Background(), "failed to negotiate with backend: %v", err)
 		return err
 	}
 	p.startProxyLoop(backendProxy)
