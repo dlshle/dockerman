@@ -18,6 +18,7 @@ type ProxyConn struct {
 }
 
 func NewProxyConn(connID int32, conn gts.Connection) *ProxyConn {
+	conn.Verbose(true)
 	return &ProxyConn{connID: connID, conn: conn}
 }
 
@@ -40,10 +41,12 @@ func (c *ProxyConn) WriteTo(writer io.Writer) (int64, error) {
 func (c *ProxyConn) read() ([]byte, error) {
 	data, err := c.conn.Read()
 	if err != nil {
+		logging.GlobalLogger.Errorf(context.Background(), "error reading from connection: %v", err)
 		return nil, err
 	}
 	msg := &proto.ProxyMessage{}
 	if err = gproto.Unmarshal(data, msg); err != nil {
+		logging.GlobalLogger.Errorf(context.Background(), "error unmarshalling message: %v due to %v", data, err)
 		return nil, err
 	}
 	if c.readInterceptor != nil {
@@ -51,9 +54,7 @@ func (c *ProxyConn) read() ([]byte, error) {
 			return nil, err
 		}
 	}
-	if len(msg.GetPayload()) > 0 {
-		logging.GlobalLogger.Debugf(context.Background(), "read message %v", msg)
-	}
+	logging.GlobalLogger.Debugf(context.Background(), "read message %v", msg)
 	if msg.GetDisconnectRequest() != nil {
 		return nil, io.EOF
 	}

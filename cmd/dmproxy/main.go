@@ -33,7 +33,7 @@ func main() {
 		portMappingsArgs string
 	)
 
-	flag.StringVar(&host, "h", "shop4u.ai:2375", "dockerman host address")
+	flag.StringVar(&host, "h", "shop4u.ai:17688", "dockerman host address")
 	flag.StringVar(&containerName, "cn", "", "docker container name")
 	flag.StringVar(&containerID, "ci", "", "docker container id")
 	flag.StringVar(&plainHost, "ph", "0.0.0.0", "proxy host address")
