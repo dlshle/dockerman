@@ -133,7 +133,7 @@ func (d *Deployment) rollingUpdate(ctx context.Context, strategy gateway.Gateway
 		return c.Names[0], c
 	})
 
-	gatewayCfg, err := strategy.CurrentConfig(ctx, d.docker, appCfg.Name)
+	gatewayCfg, err := strategy.CurrentConfig(ctx, d.docker, appCfg.Name, network)
 	if err != nil {
 		if err != gateway.ErrGatewayNotDeployed {
 			return err
