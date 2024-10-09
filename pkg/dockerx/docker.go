@@ -117,11 +117,9 @@ func (dc *DockerClient) ListContainers(ctx context.Context, params map[string]st
 }
 
 func (dc *DockerClient) RunImage(ctx context.Context, options *RunOptions) (string, error) {
-	var networkConfig *network.NetworkingConfig
-
 	exposedPorts := make(map[nat.Port]struct{})
 	for private := range options.PortMapping {
-		exposedPorts[nat.Port(private)] = struct{}{}
+		exposedPorts[nat.Port(private+"/tcp")] = struct{}{}
 	}
 	config := &container.Config{
 		Image:        options.Image,
@@ -136,12 +134,6 @@ func (dc *DockerClient) RunImage(ctx context.Context, options *RunOptions) (stri
 
 	if len(options.Networks) > 0 {
 		hostConfig.NetworkMode = container.NetworkMode(options.Networks[0])
-
-		networkConfig = &network.NetworkingConfig{
-			EndpointsConfig: map[string]*network.EndpointSettings{
-				options.Networks[0]: {},
-			},
-		}
 	}
 
 	portBindings := nat.PortMap{}
@@ -152,14 +144,13 @@ func (dc *DockerClient) RunImage(ctx context.Context, options *RunOptions) (stri
 		}
 		portBindings[port] = []nat.PortBinding{
 			{
-				HostIP:   "0.0.0.0",
 				HostPort: hostPort,
 			},
 		}
 	}
 	hostConfig.PortBindings = portBindings
 
-	resp, err := dc.cli.ContainerCreate(ctx, config, hostConfig, networkConfig, nil, options.ContainerName)
+	resp, err := dc.cli.ContainerCreate(ctx, config, hostConfig, nil, nil, options.ContainerName)
 	if err != nil {
 		return "", err
 	}

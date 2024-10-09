@@ -33,7 +33,7 @@ type RunOptions struct {
 	Image         string
 	Detached      bool
 	VolumeMapping []string
-	PortMapping   map[string]string
+	PortMapping   map[string]string // all tcp
 	Envs          []string
 	Networks      []string
 	Labels        map[string]string

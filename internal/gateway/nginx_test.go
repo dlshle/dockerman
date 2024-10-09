@@ -51,6 +51,7 @@ func TestNginx(t *testing.T) {
 			BackendContainerNames: []string{containerName},
 			Network:               network,
 			Ports:                 []string{"80"},
+			ExposedPorts:          []*ExposedPort{&ExposedPort{"80", "80"}},
 		}
 
 		if err = g.DeployGatewayContainer(ctx, d, cfg); err != nil {
