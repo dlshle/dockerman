@@ -14,7 +14,7 @@ import (
 
 type PortForward struct {
 	ProxyServerHost string
-	ContainerName   string
+	BackendName     string
 	PortMappings    []*PortMapping
 }
 
@@ -28,14 +28,18 @@ func main() {
 	var (
 		host             string
 		containerName    string
+		containerID      string
+		plainHost        string
 		portMappingsArgs string
 	)
 
 	flag.StringVar(&host, "h", "", "dockerman host address")
-	flag.StringVar(&containerName, "c", "", "docker container name")
+	flag.StringVar(&containerName, "cn", "", "docker container name")
+	flag.StringVar(&containerID, "ci", "", "docker container id")
+	flag.StringVar(&plainHost, "ph", "", "proxy host address")
 	flag.StringVar(&portMappingsArgs, "p", "", "port mappings(source:dest), separated by comma")
 
-	if err := validateInput(host, containerName, portMappingsArgs); err != nil {
+	if err := validateInput(host, containerName, containerID, plainHost, portMappingsArgs); err != nil {
 		log.Fatal(err)
 	}
 
@@ -44,9 +48,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+	backendName := plainHost
+	if containerName != "" {
+		backendName = "containerName:" + containerName
+	} else if containerID != "" {
+		backendName = "containerID:" + containerID
+	}
+
 	portForward := &PortForward{
 		ProxyServerHost: host,
-		ContainerName:   containerName,
+		BackendName:     backendName,
 		PortMappings:    portMappings,
 	}
 
@@ -63,7 +74,7 @@ func listen(pf *PortForward) (err error) {
 		wg.Add(1)
 		go func(pm *PortMapping) {
 			err = client.PortForward(context.Background(), &wg, pf.ProxyServerHost, pm.Source, &client.Remote{
-				Host: pf.ContainerName,
+				Host: pf.BackendName,
 				Port: int32(pm.Dest),
 			})
 			if err != nil {
@@ -75,12 +86,12 @@ func listen(pf *PortForward) (err error) {
 	return
 }
 
-func validateInput(host, appName, portMappingsArgs string) error {
+func validateInput(host, appName, containerID, plainHost, portMappingsArgs string) error {
 	if host == "" {
 		return fmt.Errorf("host is required")
 	}
-	if appName == "" {
-		return fmt.Errorf("app name is required")
+	if appName == "" && containerID == "" && plainHost == "" {
+		return fmt.Errorf("container name or container ID or plain host is required")
 	}
 	if portMappingsArgs == "" {
 		return fmt.Errorf("port mappings are required")
