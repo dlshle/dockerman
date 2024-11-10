@@ -46,6 +46,14 @@ func ServeHTTP(port int, dmHandler *handler.DockmanHandler) error {
 				return server.NewPlainTextResponse(200, "ok")
 			}).MustBuild().HandleRequest).
 			Build()).
+		WithRouteHandlers(server.PathHandlerBuilder("/deployments").
+			Get(server.NewCHandlerBuilder[any]().OnRequest(func(c server.CHandle[any]) server.Response {
+				deployments, err := dmHandler.ListDeployments(logging.WrapCtx(context.Background(), "traceId", c.Request().Id()))
+				if err != nil {
+					return server.NewPlainTextResponse(500, err.Error())
+				}
+				return server.NewResponse(200, deployments)
+			}).MustBuild().HandleRequest)).
 		WithRouteHandlers(server.PathHandlerBuilder("/deployment/:id").
 			Delete(server.NewCHandlerBuilder[any]().AddRequiredPathParam("id").OnRequest(func(c server.CHandle[any]) server.Response {
 				err := dmHandler.Delete(logging.WrapCtx(context.Background(), "traceId", c.Request().Id()), c.PathParam("id"))
@@ -53,6 +61,13 @@ func ServeHTTP(port int, dmHandler *handler.DockmanHandler) error {
 					return server.NewPlainTextResponse(500, err.Error())
 				}
 				return server.NewPlainTextResponse(200, "ok")
+			}).MustBuild().HandleRequest).
+			Get(server.NewCHandlerBuilder[any]().AddRequiredPathParam("id").OnRequest(func(c server.CHandle[any]) server.Response {
+				info, err := dmHandler.InfoDeployment(logging.WrapCtx(context.Background(), "traceId", c.Request().Id()), c.PathParam("id"))
+				if err != nil {
+					return server.NewPlainTextResponse(500, err.Error())
+				}
+				return server.NewResponse(200, info)
 			}).MustBuild().HandleRequest).
 			Build()).
 		Build()

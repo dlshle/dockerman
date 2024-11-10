@@ -27,7 +27,7 @@ func TestNginx(t *testing.T) {
 			t.Fatal(err)
 		}
 		if len(networks) == 0 {
-			if _, err := d.CreateNetwork(ctx, network); err != nil {
+			if _, err := d.CreateNetwork(ctx, network, nil); err != nil {
 				t.Errorf("failed to create network %v", err)
 				t.FailNow()
 			}

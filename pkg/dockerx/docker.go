@@ -184,7 +184,7 @@ func (dc *DockerClient) RunImage(ctx context.Context, options *RunOptions) (stri
 	return resp.ID, nil
 }
 
-func (dc *DockerClient) CreateNetwork(ctx context.Context, name string) (string, error) {
+func (dc *DockerClient) CreateNetwork(ctx context.Context, name string, labels map[string]string) (string, error) {
 	response, err := dc.cli.NetworkCreate(ctx, name, network.CreateOptions{})
 	if err != nil {
 		return "", err

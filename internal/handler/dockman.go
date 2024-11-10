@@ -56,6 +56,14 @@ func (s *DockmanHandler) Rollout(ctx context.Context, appCfg *config.AppConfig) 
 	return s.deployment.Rollout(ctx, strategy, appCfg)
 }
 
+func (s *DockmanHandler) ListDeployments(ctx context.Context) ([]string, error) {
+	return s.deployment.List(ctx)
+}
+
+func (s *DockmanHandler) InfoDeployment(ctx context.Context, appName string) (*deployment.DeploymentInfo, error) {
+	return s.deployment.Info(ctx, appName)
+}
+
 func (s *DockmanHandler) Delete(ctx context.Context, appName string) error {
 	return s.deployment.Delete(ctx, appName)
 }

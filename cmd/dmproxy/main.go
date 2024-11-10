@@ -12,6 +12,10 @@ import (
 	"github.com/dlshle/dockman/pkg/proxy/client"
 )
 
+/*
+ * dmproxy is the a simple command line tool that allows user to forward ports from a local machine to a (dm managed docker container)
+ */
+
 type PortForward struct {
 	ProxyServerHost string
 	BackendName     string

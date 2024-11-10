@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/dlshle/dockman/internal/config"
 	"github.com/dlshle/dockman/internal/gateway"
@@ -12,6 +13,10 @@ import (
 	"github.com/dlshle/gommon/http"
 	"github.com/dlshle/gommon/logging"
 	slicesx "github.com/dlshle/gommon/slices"
+)
+
+const (
+	NetworkLabelGtwyStrategy = "dm-gateway-strategy"
 )
 
 type Deployment struct {
@@ -65,6 +70,92 @@ func (d *Deployment) Deploy(ctx context.Context, strategy gateway.GatewayStrateg
 	}
 
 	return d.Rollout(ctx, strategy, appCfg)
+}
+
+func (d *Deployment) List(ctx context.Context) ([]string, error) {
+	var appNames []string
+	networks, err := d.docker.ListNetworks(ctx, nil)
+	if err != nil {
+		logging.GlobalLogger.Errorf(ctx, "failed to list networks: %v", err)
+		return nil, err
+	}
+
+	for _, network := range networks {
+		if appName, hasPrefix := strings.CutPrefix(network.Name, "dm-network"); hasPrefix {
+			appNames = append(appNames, appName)
+		}
+	}
+
+	return appNames, nil
+}
+
+func (d *Deployment) Info(ctx context.Context, appName string) (*DeploymentInfo, error) {
+	networkName := networkNameByAppName(appName)
+
+	// network is only for validation
+	networks, err := d.docker.ListNetworks(ctx, map[string]string{"name": networkName})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(networks) == 0 {
+		return nil, errors.New("app deployment for " + appName + " is not found")
+	}
+
+	gtwyStrategy := ""
+	for _, network := range networks {
+		if stg, exists := network.Labels[NetworkLabelGtwyStrategy]; exists {
+			gtwyStrategy = stg
+		}
+	}
+
+	strategy := gateway.StrategyRegistry[gtwyStrategy]
+	if strategy == nil {
+		return nil, fmt.Errorf("can not find gateway strategy from appName", appName)
+	}
+
+	gtwyCfg, err := strategy.CurrentConfig(ctx, d.docker, appName, networkName)
+	if err != nil {
+		return nil, err
+	}
+
+	gatewayContainer, err := strategy.GatewayContainerByAppName(ctx, d.docker, appName)
+	if err != nil {
+		return nil, err
+	}
+
+	// backend containers
+	backendContainers, err := strategy.BackendContainersByNetwork(ctx, d.docker, networkName)
+	if err != nil {
+		return nil, err
+	}
+
+	appCfg := &config.AppConfig{
+		GatewayStrategy: &gtwyStrategy,
+		Image:           backendContainers[0].Image,
+		Name:            appName,
+		Replicas:        len(backendContainers),
+	}
+
+	return &DeploymentInfo{
+		AppConfig: appCfg,
+		Gateway: &DeploymentGateway{
+			Config: gtwyCfg,
+			Container: &DeploymentBackend{
+				ID:    gatewayContainer.ID,
+				Image: gatewayContainer.Image,
+				Name:  gatewayContainer.Names[0],
+			},
+		},
+		Network: networkName,
+		Containers: slicesx.Map(backendContainers, func(c *dockerx.Container) *DeploymentBackend {
+			return &DeploymentBackend{
+				ID:    c.ID,
+				Image: c.Image,
+				Name:  c.Names[0],
+			}
+		}),
+	}, nil
 }
 
 func (d *Deployment) Delete(ctx context.Context, appName string) error {
@@ -268,7 +359,7 @@ func (d *Deployment) createNetworkIfNotExists(ctx context.Context, appCfg *confi
 			return nil
 		}
 	}
-	_, err = d.docker.CreateNetwork(ctx, networkName)
+	_, err = d.docker.CreateNetwork(ctx, networkName, map[string]string{NetworkLabelGtwyStrategy: *appCfg.GatewayStrategy})
 	return err
 }
 
@@ -277,11 +368,11 @@ func networkNameByAppConfig(appCfg *config.AppConfig) string {
 }
 
 func networkNameByAppName(appName string) string {
-	return fmt.Sprintf("v-network-%s", appName)
+	return fmt.Sprintf("dm-network-%s", appName)
 }
 
 func containerNameByAppConfig(appCfg *config.AppConfig, replicaID int) string {
-	return fmt.Sprintf("v-%s-%d", appCfg.Name, replicaID)
+	return fmt.Sprintf("dm-%s-%d", appCfg.Name, replicaID)
 }
 
 func (d *Deployment) containerByReplicaID(ctx context.Context, appCfg *config.AppConfig, replicaID int) (*dockerx.Container, error) {
