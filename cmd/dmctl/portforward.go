@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"strconv"
@@ -11,10 +10,6 @@ import (
 
 	"github.com/dlshle/dockman/pkg/proxy/client"
 )
-
-/*
- * dmproxy is the a simple command line tool that allows user to forward ports from a local machine to a (dm managed docker container)
- */
 
 type PortForward struct {
 	ProxyServerHost string
@@ -25,51 +20,6 @@ type PortForward struct {
 type PortMapping struct {
 	Source int
 	Dest   int
-}
-
-func main() {
-	// dmproxy -h localhost -c d2123cf -p 5000:5000, 3000:3000, 80:80
-	var (
-		host             string
-		containerName    string
-		containerID      string
-		plainHost        string
-		portMappingsArgs string
-	)
-
-	flag.StringVar(&host, "h", "127.0.0.1:17688", "dockerman host address")
-	flag.StringVar(&containerName, "cn", "", "docker container name")
-	flag.StringVar(&containerID, "ci", "", "docker container id")
-	flag.StringVar(&plainHost, "ph", "0.0.0.0", "proxy host address")
-	flag.StringVar(&portMappingsArgs, "p", "5001:5000", "port mappings(source:dest), separated by comma")
-
-	flag.Parse()
-
-	if err := validateInput(host, containerName, containerID, plainHost, portMappingsArgs); err != nil {
-		log.Fatal(err)
-	}
-
-	portMappings, err := parsePortMappings(portMappingsArgs)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	backendName := plainHost
-	if containerName != "" {
-		backendName = "containerName:" + containerName
-	} else if containerID != "" {
-		backendName = "containerID:" + containerID
-	}
-
-	portForward := &PortForward{
-		ProxyServerHost: host,
-		BackendName:     backendName,
-		PortMappings:    portMappings,
-	}
-
-	if err = listen(portForward); err != nil {
-		log.Fatal(err)
-	}
 }
 
 func listen(pf *PortForward) (err error) {

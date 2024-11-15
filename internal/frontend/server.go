@@ -14,6 +14,9 @@ import (
 
 func ServeHTTP(port int, dmHandler *handler.DockmanHandler) error {
 	svc, err := server.NewServiceBuilder().Id("dockman").
+		WithRouteHandlers(server.PathHandlerBuilder("/ping").Get(server.NewCHandlerBuilder[any]().OnRequest(func(c server.CHandle[any]) server.Response {
+			return server.NewPlainTextResponse(200, "ok")
+		}).MustBuild().HandleRequest)).
 		WithRouteHandlers(server.PathHandlerBuilder("/deploy").
 			Post(server.NewCHandlerBuilder[*config.AppConfig]().RequireBody().Unmarshaller(func(b []byte) (*config.AppConfig, error) {
 				if len(b) == 0 {

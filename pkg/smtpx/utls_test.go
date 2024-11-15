@@ -4,10 +4,10 @@ import "testing"
 
 func TestSendMail(t *testing.T) {
 	mail := &Mail{
-		Body:    "hello world again!",
-		From:    "dlshle@mytestlocaldomain.com",
+		Body:    "另一封测试，别回复~O!",
+		From:    "yes-reply@dashdoor.com",
 		Rcpts:   []string{"dlshle@hotmail.com"},
-		Subject: "another test bro",
+		Subject: "Test Email",
 	}
 
 	err := SendMail(mail)

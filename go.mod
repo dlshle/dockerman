@@ -6,6 +6,7 @@ require (
 	github.com/dlshle/gommon v0.4.84
 	github.com/docker/docker v27.3.0+incompatible
 	github.com/docker/go-connections v0.5.0
+	github.com/google/uuid v1.6.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 

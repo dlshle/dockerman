@@ -111,7 +111,7 @@ func (d *Deployment) Info(ctx context.Context, appName string) (*DeploymentInfo,
 
 	strategy := gateway.StrategyRegistry[gtwyStrategy]
 	if strategy == nil {
-		return nil, fmt.Errorf("can not find gateway strategy from appName", appName)
+		return nil, fmt.Errorf("can not find gateway strategy from app name: %s", appName)
 	}
 
 	gtwyCfg, err := strategy.CurrentConfig(ctx, d.docker, appName, networkName)

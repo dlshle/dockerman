@@ -5,16 +5,23 @@ import (
 	"net"
 	"net/smtp"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type Mail struct {
-	Subject string
-	From    string
-	Rcpts   []string
-	Body    string
+	MessageID string
+	Subject   string
+	From      string
+	Rcpts     []string
+	Body      string
 }
 
 func SendMail(mail *Mail) error {
+	if mail.MessageID == "" {
+		domain := strings.Split(mail.From, "@")[1]
+		mail.MessageID = fmt.Sprintf("<%s@%s>", uuid.NewString(), domain)
+	}
 	rcptByDomains := make(map[string][]string)
 	for _, rcpt := range mail.Rcpts {
 		svr, err := mxLookup(rcpt)
@@ -34,6 +41,7 @@ func SendMail(mail *Mail) error {
 func sendToRecipiantsByServer(svr string, mail *Mail) error {
 	// Construct the email message
 	header := make(map[string]string)
+	header["Message-ID"] = mail.MessageID
 	header["From"] = mail.From
 	header["To"] = strings.Join(mail.Rcpts, ",")
 	header["Subject"] = mail.Subject
