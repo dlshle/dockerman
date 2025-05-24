@@ -28,7 +28,7 @@ func NewCli(host string) (*DmDaemonCli, error) {
 }
 
 func (c *DmDaemonCli) ListDeployments(ctx context.Context) ([]string, error) {
-	req := http.NewRequestBuilder().Method("GET").URL(c.host + "/deployments").Build()
+	req := http.NewRequestBuilder().Context(ctx).Method("GET").URL(c.host + "/deployments").Build()
 	resp := c.httpCli.Request(req)
 	if !resp.Success {
 		return nil, fmt.Errorf("failed to list deployments: %s", resp.Body)

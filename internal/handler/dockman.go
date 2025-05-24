@@ -10,6 +10,7 @@ import (
 	"github.com/dlshle/dockman/internal/portforward"
 	"github.com/dlshle/dockman/pkg/dockerx"
 	"github.com/dlshle/gommon/logging"
+	"github.com/docker/docker/api/types/container"
 )
 
 type DockmanHandler struct {
@@ -47,6 +48,10 @@ func (s *DockmanHandler) Rollout(ctx context.Context, appCfg *config.AppConfig) 
 	if appCfg.GatewayStrategy == nil {
 		appCfg.GatewayStrategy = new(string)
 		*appCfg.GatewayStrategy = "nginx"
+	}
+	if appCfg.RestartPolicy == nil {
+		appCfg.RestartPolicy = new(string)
+		*appCfg.RestartPolicy = string(container.RestartPolicyUnlessStopped)
 	}
 	strategy := gateway.StrategyRegistry[*appCfg.GatewayStrategy]
 	if strategy == nil {

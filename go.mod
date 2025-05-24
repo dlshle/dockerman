@@ -3,7 +3,7 @@ module github.com/dlshle/dockman
 go 1.22.3
 
 require (
-	github.com/dlshle/gommon v0.4.84
+	github.com/dlshle/gommon v0.4.90
 	github.com/docker/docker v27.3.0+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/google/uuid v1.6.0
@@ -21,8 +21,8 @@ require (
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/dlshle/aghs v1.4.63
-	github.com/dlshle/gts v0.1.8
+	github.com/dlshle/aghs v1.4.72
+	github.com/dlshle/gts v0.2.0
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect

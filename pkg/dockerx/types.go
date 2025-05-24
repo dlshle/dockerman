@@ -1,5 +1,7 @@
 package dockerx
 
+import "github.com/docker/docker/api/types/container"
+
 type Image struct {
 	ID       string
 	RepoTags []string
@@ -8,15 +10,16 @@ type Image struct {
 }
 
 type Container struct {
-	ID           string
-	Names        []string
-	Image        string
-	ImageID      string
-	Labels       map[string]string
-	State        string
-	Status       string
-	IPAddresses  map[string]string // network name to ip mapping
-	ExposedPorts map[uint16]uint16 // private port to public port
+	ID            string
+	Names         []string
+	Image         string
+	ImageID       string
+	Labels        map[string]string
+	State         string
+	Status        string
+	IPAddresses   map[string]string // network name to ip mapping
+	ExposedPorts  map[uint16]uint16 // private port to public port
+	RestartPolicy string
 }
 
 type Network struct {
@@ -29,6 +32,7 @@ type Network struct {
 }
 
 type RunOptions struct {
+	RestartPolicy container.RestartPolicyMode
 	ContainerName string
 	Image         string
 	Detached      bool

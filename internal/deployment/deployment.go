@@ -135,6 +135,7 @@ func (d *Deployment) Info(ctx context.Context, appName string) (*DeploymentInfo,
 		Image:           backendContainers[0].Image,
 		Name:            appName,
 		Replicas:        len(backendContainers),
+		RestartPolicy:   &backendContainers[0].RestartPolicy,
 	}
 
 	return &DeploymentInfo{

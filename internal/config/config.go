@@ -32,4 +32,5 @@ type AppConfig struct {
 	Ports           []PortConfig          `yaml:"ports,flow"`
 	ReadinessCheck  *ReadinessCheckConfig `yaml:"readinessCheck"`
 	GatewayStrategy *string               `yaml:"gatewayStrategy"`
+	RestartPolicy   *string               `yaml:"restartPolicy"`
 }

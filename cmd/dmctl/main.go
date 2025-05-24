@@ -51,9 +51,9 @@ func main() {
 	flag.StringVar(&appName, "appname", "", "name of the application")
 	flag.StringVar(&appConfigPath, "appcfg", "", "path to the application config file")
 	flag.StringVar(&pfContainerName, "cname", "", "port forward target container name")
-	flag.StringVar(&appConfigPath, "cid", "", "port forward target container id")
-	flag.StringVar(&appConfigPath, "th", "", "port forward target host address")
-	flag.StringVar(&appConfigPath, "pm", "", "port forward port mappings(source:dest), separated by comma")
+	flag.StringVar(&pfContainerID, "cid", "", "port forward target container id")
+	flag.StringVar(&pfTargetHost, "th", "", "port forward target host address")
+	flag.StringVar(&pfPortMappings, "pm", "", "port forward port mappings(source:dest), separated by comma")
 	flag.IntVar(&apiPort, "p", 6300, "dmdaemon api service port")
 	flag.IntVar(&pfPort, "pp", 0, "path to the application config file")
 

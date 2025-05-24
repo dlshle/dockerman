@@ -92,6 +92,10 @@ func (dc *DockerClient) ListContainers(ctx context.Context, params map[string]st
 
 	var result []*Container
 	for _, container := range containers {
+		containerDesc, err := dc.cli.ContainerInspect(ctx, container.ID)
+		if err != nil {
+			return nil, err
+		}
 		networkIP := make(map[string]string)
 		for networkName, network := range container.NetworkSettings.Networks {
 			networkIP[networkName] = network.IPAddress
@@ -104,13 +108,14 @@ func (dc *DockerClient) ListContainers(ctx context.Context, params map[string]st
 				}
 				return s
 			}),
-			Labels:       container.Labels,
-			Image:        container.Image,
-			ImageID:      container.ImageID,
-			State:        container.State,
-			Status:       container.Status,
-			IPAddresses:  networkIP,
-			ExposedPorts: slices.ToMap(container.Ports, func(port types.Port) (uint16, uint16) { return port.PrivatePort, port.PublicPort }),
+			Labels:        container.Labels,
+			Image:         container.Image,
+			ImageID:       container.ImageID,
+			State:         container.State,
+			Status:        container.Status,
+			IPAddresses:   networkIP,
+			ExposedPorts:  slices.ToMap(container.Ports, func(port types.Port) (uint16, uint16) { return port.PrivatePort, port.PublicPort }),
+			RestartPolicy: string(containerDesc.HostConfig.RestartPolicy.Name),
 		})
 	}
 	return result, nil
@@ -149,6 +154,14 @@ func (dc *DockerClient) RunImage(ctx context.Context, options *RunOptions) (stri
 		}
 	}
 	hostConfig.PortBindings = portBindings
+
+	restartPolicy := container.RestartPolicy{
+		Name: container.RestartPolicyUnlessStopped,
+	}
+	if options.RestartPolicy != "" {
+		restartPolicy.Name = options.RestartPolicy
+	}
+	hostConfig.RestartPolicy = restartPolicy
 
 	resp, err := dc.cli.ContainerCreate(ctx, config, hostConfig, nil, nil, options.ContainerName)
 	if err != nil {
