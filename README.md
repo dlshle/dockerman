@@ -2,6 +2,16 @@
 What a weird name! I know.
 Tird of Kubernetes? Try this. This is a simple Docker comtainer orchestration tool.
 
+## Features
+* Multi-backend rotation
+* Port-forwarding
+* Startup health-check(quick rollback on health check failure)
+* No storage required
+
+## Roadmap
+* Centralized auto log-collection(in-progress)
+* Cross-host communication(based on swarm)
+
 ## Prepare Docker Daemoon to Listen on 2375 Port
 1. Open up service daemon settings
 ```shell
